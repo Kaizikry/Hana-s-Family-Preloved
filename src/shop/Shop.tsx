@@ -5,7 +5,7 @@ import { useStore } from "../store";
 import { BasketDrawer } from "./BasketDrawer";
 import { Catalog } from "./Catalog";
 import { Checkout } from "./Checkout";
-import { PlantPage } from "./PlantPage";
+import { ItemPage } from "./ItemPage";
 import { ThankYou } from "./ThankYou";
 
 const ITEM_ROUTE = "/item/";
@@ -29,7 +29,7 @@ export function Shop({ route }: { route: string }) {
       </header>
 
       <main>
-        {route.startsWith(ITEM_ROUTE) ? <PlantPage id={decodeURIComponent(route.slice(ITEM_ROUTE.length))} />
+        {route.startsWith(ITEM_ROUTE) ? <ItemPage id={decodeURIComponent(route.slice(ITEM_ROUTE.length))} />
           : route === "/tempahan" ? <Checkout />
           : route === "/terima-kasih" ? <ThankYou />
           : <Catalog />}

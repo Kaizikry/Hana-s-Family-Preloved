@@ -1,64 +1,62 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { fetchShop } from "./lib/api";
 import { local, readJson, writeJson } from "./lib/storage";
-import { basketTotal } from "./lib/whatsapp";
-import { inStock, type BasketItem, type Plant } from "./types";
+import { isAvailable, type Item } from "./types";
 
-const BASKET_KEY = "preloved.basket";
+const BAG_KEY = "preloved.bag";
+
+/** A saved bag is only ever a list of ids; anything else in storage is ignored. */
+function readBag(): string[] {
+  const saved = readJson<unknown>(local, BAG_KEY);
+  return Array.isArray(saved) ? [...new Set(saved.filter((id): id is string => typeof id === "string"))].slice(0, 30) : [];
+}
 
 function useStoreValue() {
-  const [plants, setPlants] = useState<Plant[]>([]);
+  const [products, setProducts] = useState<Item[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [postageFee, setPostageFee] = useState(0);
+  const [holdMinutes, setHoldMinutes] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [quantities, setQuantities] = useState<Record<string, number>>(() => readJson(local, BASKET_KEY) ?? {});
+  const [bag, setBag] = useState<string[]>(readBag);
   const [basketOpen, setBasketOpen] = useState(false);
 
   const reload = useCallback(() => {
     setStatus("loading");
-    fetchShop()
+    return fetchShop()
       .then((shop) => {
-        setPlants(shop.plants);
+        setProducts(shop.items);
         setWhatsappNumber(shop.whatsappNumber);
+        setPostageFee(shop.postageFee);
+        setHoldMinutes(shop.holdMinutes);
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
   }, []);
-  useEffect(reload, [reload]);
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   useEffect(() => {
-    writeJson(local, BASKET_KEY, quantities);
-  }, [quantities]);
+    writeJson(local, BAG_KEY, bag);
+  }, [bag]);
 
-  const setQty = useCallback((plant: Plant, qty: number) => {
-    setQuantities(({ [plant.id]: _old, ...rest }) => {
-      const clamped = Math.min(qty, plant.stock);
-      return clamped > 0 ? { ...rest, [plant.id]: clamped } : rest;
-    });
-  }, []);
+  const add = useCallback((id: string) => setBag((b) => (b.includes(id) ? b : [...b, id])), []);
+  const remove = useCallback((id: string) => setBag((b) => b.filter((x) => x !== id)), []);
+  const clearBasket = useCallback(() => setBag([]), []);
 
-  const clearBasket = useCallback(() => setQuantities({}), []);
-
-  // Prices and stock come from the catalog, so a basket saved last week can't go stale.
+  // Statuses come from the catalogue, so an item reserved since it went in the bag shows as gone.
   const lines = useMemo(
-    () =>
-      plants
-        .filter((plant) => quantities[plant.id])
-        .map((plant) => ({ plant, qty: Math.min(quantities[plant.id], plant.stock), soldOut: !inStock(plant) })),
-    [plants, quantities],
+    () => bag.map((id) => products.find((p) => p.id === id)).filter((item): item is Item => !!item).map((item) => ({ item, available: isAvailable(item) })),
+    [products, bag],
   );
-  const items = useMemo<BasketItem[]>(
-    () =>
-      lines
-        .filter((line) => !line.soldOut)
-        .map(({ plant, qty }) => ({ id: plant.id, name: plant.name, price: plant.price, qty })),
-    [lines],
-  );
+  const items = useMemo(() => lines.filter((line) => line.available).map((line) => line.item), [lines]);
 
   return {
-    plants, setPlants, whatsappNumber, status, reload, lines, items, setQty, clearBasket, basketOpen, setBasketOpen,
-    qtyOf: (id: string) => quantities[id] ?? 0,
-    count: items.reduce((sum, item) => sum + item.qty, 0),
-    total: basketTotal(items),
+    products, setProducts, whatsappNumber, postageFee, holdMinutes, status, reload,
+    lines, items, add, remove, clearBasket, basketOpen, setBasketOpen,
+    inBag: (id: string) => bag.includes(id),
+    count: items.length,
+    total: Math.round(items.reduce((sum, item) => sum + item.price, 0) * 100) / 100,
   };
 }
 

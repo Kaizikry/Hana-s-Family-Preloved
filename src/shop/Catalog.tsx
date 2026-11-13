@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { Photo, stockText } from "../components/ui";
+import { Photo, statusText } from "../components/ui";
 import { config } from "../config";
 import { money } from "../lib/format";
 import { useStore } from "../store";
-import { CATEGORIES, inStock, type Plant } from "../types";
+import { CATEGORIES, coverPhoto, isAvailable, type Item } from "../types";
 
 // A library stand-in until there is a photo of the family's own clothes.
 const HERO_PHOTO = "images/photos/wooden-coat-hangers-1920.jpg";
@@ -16,18 +16,18 @@ function showCatalog() {
 }
 
 export function Catalog() {
-  const { plants, status, reload } = useStore();
+  const { products, status, reload } = useStore();
   const [category, setCategory] = useState("Semua");
   const [query, setQuery] = useState("");
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return plants.filter(
-      (p) => (category === "Semua" || p.category === category) && (!q || `${p.name} ${p.colour}`.toLowerCase().includes(q)),
+    return products.filter(
+      (p: Item) => (category === "Semua" || p.category === category) && (!q || `${p.name} ${p.colour} ${p.brand} ${p.code}`.toLowerCase().includes(q)),
     );
-  }, [plants, category, query]);
+  }, [products, category, query]);
 
-  const usedCategories = CATEGORIES.filter((c) => plants.some((p) => p.category === c));
+  const usedCategories = CATEGORIES.filter((c) => products.some((p: Item) => p.category === c));
 
   return (
     <>
@@ -59,7 +59,7 @@ export function Catalog() {
             <h2>Katalog pakaian</h2>
             <div className="catalog-tools">
               <p>Semua harga ialah anggaran. {config.ownerName} akan sahkan stok dan harga melalui WhatsApp.</p>
-              <input type="search" aria-label="Cari item" placeholder="Cari nama atau warna…" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <input type="search" aria-label="Cari item" placeholder="Cari nama, warna atau kod…" value={query} onChange={(e) => setQuery(e.target.value)} />
             </div>
           </div>
 
@@ -71,7 +71,7 @@ export function Catalog() {
             </div>
           )}
 
-          {status === "loading" && plants.length === 0 && <p className="notice" role="status">Sedang memuatkan item, sekejap ya.</p>}
+          {status === "loading" && products.length === 0 && <p className="notice" role="status">Sedang memuatkan item, sekejap ya.</p>}
 
           {status === "error" && (
             <div className="notice" role="alert">
@@ -80,9 +80,9 @@ export function Catalog() {
             </div>
           )}
 
-          {status === "ready" && plants.length === 0 && <p className="notice">Belum ada item disenaraikan. Sila datang semula nanti.</p>}
+          {status === "ready" && products.length === 0 && <p className="notice">Belum ada item disenaraikan. Sila datang semula nanti.</p>}
 
-          {plants.length > 0 && shown.length === 0 && (
+          {products.length > 0 && shown.length === 0 && (
             <div className="notice">
               <p>Tiada item dengan nama itu.</p>
               <button type="button" className="btn btn-quiet" onClick={() => { setQuery(""); setCategory("Semua"); }}>Lihat semua item</button>
@@ -90,7 +90,7 @@ export function Catalog() {
           )}
 
           <ul className="plant-grid">
-            {shown.map((plant) => <li key={plant.id}><PlantCard plant={plant} /></li>)}
+            {shown.map((item) => <li key={item.id}><ItemCard item={item} /></li>)}
           </ul>
         </div>
       </section>
@@ -98,25 +98,24 @@ export function Catalog() {
   );
 }
 
-function PlantCard({ plant }: { plant: Plant }) {
-  const { qtyOf, setQty, setBasketOpen } = useStore();
-  const href = `#/item/${encodeURIComponent(plant.id)}`;
-  const available = inStock(plant);
-  const inBasket = qtyOf(plant.id);
+function ItemCard({ item }: { item: Item }) {
+  const { inBag, add, setBasketOpen } = useStore();
+  const href = `#/item/${encodeURIComponent(item.id)}`;
+  const available = isAvailable(item);
 
   return (
     <article className={available ? "plant-card" : "plant-card is-sold"}>
-      <a className="arch" href={href} tabIndex={-1} aria-hidden="true"><Photo plant={plant} /></a>
+      <a className="arch" href={href} tabIndex={-1} aria-hidden="true"><Photo src={coverPhoto(item)} alt={item.name} /></a>
       <div className="plant-card-title">
-        <h3><a href={href}>{plant.name}</a></h3>
-        <strong>{money(plant.price)}</strong>
+        <h3><a href={href}>{item.name}</a></h3>
+        <strong>{money(item.price)}</strong>
       </div>
-      {plant.colour && <p className="muted">{plant.colour}</p>}
+      <p className="muted">{[item.size, item.colour].filter(Boolean).join(", ")}</p>
       <div className="plant-card-foot">
-        <span className={available && plant.stock > 3 ? "muted" : "low"}>{stockText(plant)}</span>
-        {available && (inBasket > 0
-          ? <button type="button" className="btn btn-quiet btn-small" onClick={() => setBasketOpen(true)}>Dalam bakul ({inBasket})</button>
-          : <button type="button" className="btn btn-quiet btn-small" onClick={() => setQty(plant, 1)} aria-label={`Tambah ${plant.name}`}>Tambah</button>)}
+        <span className={available ? "muted" : "low"}>{available ? item.code : statusText(item)}</span>
+        {available && (inBag(item.id)
+          ? <button type="button" className="btn btn-quiet btn-small" onClick={() => setBasketOpen(true)}>Dalam bakul</button>
+          : <button type="button" className="btn btn-quiet btn-small" onClick={() => add(item.id)} aria-label={`Tambah ${item.name}`}>Tambah</button>)}
       </div>
     </article>
   );

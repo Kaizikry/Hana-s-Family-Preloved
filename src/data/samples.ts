@@ -1,37 +1,33 @@
-import type { PlantDraft } from "../types";
+import type { Item } from "../types";
 
-const item = (
-  picture: string,
-  name: string,
-  category: string,
-  price: number,
-  details: { colour: string; brand?: string; condition: string; size: string; description: string },
-): PlantDraft => ({
-  name,
-  category,
-  price,
-  stock: 1,
-  status: "Available",
+type Sample = Pick<Item, "name" | "category" | "price" | "colour" | "condition" | "size"> & Partial<Pick<Item, "brand" | "flawNotes" | "originalPrice" | "measurements" | "description" | "status">>;
+
+const sample = (picture: string, fields: Sample): Omit<Item, "id" | "code" | "createdAt"> => ({
   brand: "",
-  ...details,
-  imageUrl: `images/samples/${picture}.svg`,
+  flawNotes: "",
+  originalPrice: 0,
+  measurements: {},
+  description: "",
+  status: "Available",
+  ...fields,
+  photos: [`images/samples/${picture}.svg`],
 });
 
 /**
  * Demo mode only. Made-up items with drawn placeholder pictures, so the shop can be tried before
  * it is connected to the Google Sheet. Real items are added in admin with real photos.
  */
-export const SAMPLE_ITEMS: PlantDraft[] = [
-  item("blaus-putih", "Blaus Linen Putih", "Wanita", 25, { colour: "Putih", brand: "Uniqlo", condition: "Seperti baru", size: "M", description: "Linen ringan, sesuai untuk cuaca panas. Dipakai dua kali." }),
-  item("kurung-biru", "Baju Kurung Moden Biru", "Wanita", 45, { colour: "Biru laut", condition: "Baik", size: "L", description: "Kain cotton lembut, dipakai satu musim raya." }),
-  item("dress-kuning", "Dress Bunga Kuning", "Wanita", 35, { colour: "Kuning", condition: "Seperti baru", size: "S", description: "Dress labuh bercorak bunga kecil, ada poket di sisi." }),
-  item("bawal-krim", "Tudung Bawal Krim", "Tudung & Selendang", 12, { colour: "Krim", condition: "Baru dengan tag", size: "Free Size", description: "Bawal cotton 45 inci, belum pernah dipakai." }),
-  { ...item("selendang-hijau", "Selendang Chiffon Hijau", "Tudung & Selendang", 15, { colour: "Hijau zamrud", condition: "Baik", size: "Free Size", description: "Chiffon ringan, tidak jarang." }), stock: 0, status: "Sold Out" },
-  item("kemeja-kotak", "Kemeja Kotak Biru", "Lelaki", 20, { colour: "Biru dan putih", brand: "Padini", condition: "Baik", size: "L", description: "Lengan panjang, kain cotton tebal." }),
-  item("polo-hitam", "T-shirt Polo Hitam", "Lelaki", 18, { colour: "Hitam", condition: "Seperti baru", size: "XL", description: "Polo cotton pique, warna masih pekat." }),
-  item("slack-kelabu", "Seluar Slack Kelabu", "Lelaki", 25, { colour: "Kelabu", condition: "Baik", size: "Pinggang 34", description: "Sesuai untuk ke pejabat. Panjang 100 cm." }),
-  item("jeans-biru", "Seluar Jeans Biru", "Wanita", 30, { colour: "Biru", brand: "Levi's", condition: "Baik", size: "Pinggang 28", description: "Potongan lurus, sedikit pudar di lutut." }),
-  item("kasut-putih", "Kasut Sukan Putih", "Kasut & Beg", 60, { colour: "Putih", condition: "Baik", size: "EU 41", description: "Tapak masih elok, sudah dicuci." }),
-  item("beg-coklat", "Beg Tangan Coklat", "Kasut & Beg", 40, { colour: "Coklat", condition: "Seperti baru", size: "", description: "Kulit sintetik, ada zip di dalam." }),
-  item("jaket-denim", "Jaket Denim", "Wanita", 38, { colour: "Biru denim", condition: "Ada kecacatan", size: "M", description: "Satu butang di lengan kiri tertanggal. Selain itu elok." }),
+export const SAMPLE_ITEMS = [
+  sample("blaus-putih", { name: "Blaus Linen Putih", category: "Wanita", price: 25, originalPrice: 79, colour: "Putih", brand: "Uniqlo", condition: "Seperti baru", size: "M", measurements: { chest: 50, length: 66, sleeve: 58 }, description: "Linen ringan, sesuai untuk cuaca panas. Dipakai dua kali." }),
+  sample("kurung-biru", { name: "Baju Kurung Moden Biru", category: "Wanita", price: 45, colour: "Biru laut", condition: "Baik", size: "L", measurements: { chest: 54, length: 104 }, description: "Kain cotton lembut, dipakai satu musim raya." }),
+  sample("dress-kuning", { name: "Dress Bunga Kuning", category: "Wanita", price: 35, colour: "Kuning", condition: "Seperti baru", size: "S", measurements: { chest: 44, length: 128, waist: 36 }, description: "Dress labuh bercorak bunga kecil, ada poket di sisi." }),
+  sample("bawal-krim", { name: "Tudung Bawal Krim", category: "Tudung & Selendang", price: 12, colour: "Krim", condition: "Baru dengan tag", size: "Free Size", description: "Bawal cotton 45 inci, belum pernah dipakai." }),
+  sample("selendang-hijau", { name: "Selendang Chiffon Hijau", category: "Tudung & Selendang", price: 15, colour: "Hijau zamrud", condition: "Baik", size: "Free Size", description: "Chiffon ringan, tidak jarang.", status: "Sold" }),
+  sample("kemeja-kotak", { name: "Kemeja Kotak Biru", category: "Lelaki", price: 20, colour: "Biru dan putih", brand: "Padini", condition: "Baik", size: "L", measurements: { chest: 56, length: 76, shoulder: 47, sleeve: 63 }, description: "Lengan panjang, kain cotton tebal." }),
+  sample("polo-hitam", { name: "T-shirt Polo Hitam", category: "Lelaki", price: 18, colour: "Hitam", condition: "Seperti baru", size: "XL", measurements: { chest: 60, length: 74 }, description: "Polo cotton pique, warna masih pekat." }),
+  sample("slack-kelabu", { name: "Seluar Slack Kelabu", category: "Lelaki", price: 25, colour: "Kelabu", condition: "Baik", size: "Pinggang 34", measurements: { waist: 43, length: 100, inseam: 76 }, description: "Sesuai untuk ke pejabat." }),
+  sample("jeans-biru", { name: "Seluar Jeans Biru", category: "Wanita", price: 30, colour: "Biru", brand: "Levi's", condition: "Baik", size: "Pinggang 28", measurements: { waist: 36, hip: 47, inseam: 74 }, description: "Potongan lurus, sedikit pudar di lutut." }),
+  sample("kasut-putih", { name: "Kasut Sukan Putih", category: "Kasut & Beg", price: 60, colour: "Putih", condition: "Baik", size: "EU 41", measurements: { foot: 26.5 }, description: "Tapak masih elok, sudah dicuci." }),
+  sample("beg-coklat", { name: "Beg Tangan Coklat", category: "Kasut & Beg", price: 40, colour: "Coklat", condition: "Seperti baru", size: "", description: "Kulit sintetik, ada zip di dalam." }),
+  sample("jaket-denim", { name: "Jaket Denim", category: "Wanita", price: 38, colour: "Biru denim", condition: "Ada kecacatan", size: "M", flawNotes: "Satu butang di lengan kiri tertanggal.", measurements: { chest: 52, length: 60 }, description: "Selain butang itu, elok dan tebal." }),
 ];

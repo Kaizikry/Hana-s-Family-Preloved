@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import type { Plant } from "../types";
+import type { Item, ItemStatus } from "../types";
 
 export function Hanger() {
   return (
@@ -17,28 +17,22 @@ export function BasketIcon() {
   );
 }
 
-/** A photo, or a blank arch for plants that don't have one yet or whose photo fails to load. */
-export function Photo({ plant, src }: { plant: Pick<Plant, "name" | "imageUrl">; src?: string }) {
+/** A photo, or a plain frame for items without one yet or whose photo fails to load. */
+export function Photo({ src, alt }: { src: string; alt: string }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = src ?? plant.imageUrl;
-  if (!url || failedUrl === url) return <div className="photo-empty">Foto akan datang</div>;
-  return <img src={url} alt={plant.name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailedUrl(url)} />;
+  if (!src || failedUrl === src) return <div className="photo-empty">Foto akan datang</div>;
+  return <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailedUrl(src)} />;
 }
 
-export function stockText(plant: Plant) {
-  if (plant.status === "Sold Out" || plant.stock <= 0) return "Habis dijual";
-  return plant.stock <= 3 ? `Tinggal ${plant.stock} sahaja` : `${plant.stock} dalam stok`;
-}
+const STATUS_TEXT: Record<ItemStatus, string> = {
+  Available: "Ada",
+  Reserved: "Ditempah",
+  Sold: "Terjual",
+  Draf: "Draf",
+  Disembunyi: "Disembunyikan",
+};
 
-export function Stepper({ value, max, label, onChange }: { value: number; max: number; label: string; onChange: (n: number) => void }) {
-  return (
-    <div className="stepper" role="group" aria-label={`Kuantiti ${label}`}>
-      <button type="button" onClick={() => onChange(value - 1)} aria-label={`Kurangkan ${label}`}>−</button>
-      <output>{value}</output>
-      <button type="button" onClick={() => onChange(value + 1)} disabled={value >= max} aria-label={`Tambah ${label}`}>+</button>
-    </div>
-  );
-}
+export const statusText = (item: Pick<Item, "status">) => STATUS_TEXT[item.status];
 
 export function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (

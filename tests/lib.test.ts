@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SAMPLE_ITEMS } from "../src/data/samples";
 import { inquiryTime, isValidPhone, money, pickupDays, roundCents, toWhatsAppNumber } from "../src/lib/format";
 import { fitWithin } from "../src/lib/image";
-import { basketTotal, buildMessage, whatsappUrl } from "../src/lib/whatsapp";
-import { CATEGORIES } from "../src/types";
+import { buildMessage, whatsappUrl, type Order } from "../src/lib/whatsapp";
+import { CATEGORIES, CONDITIONS, FLAWED } from "../src/types";
 
 describe("money", () => {
   it("drops cents only for whole amounts", () => {
@@ -15,7 +15,6 @@ describe("money", () => {
 
   it("avoids floating point drift in totals", () => {
     expect(roundCents(0.1 + 0.2)).toBe(0.3);
-    expect(basketTotal([{ price: 19.99, qty: 3 }, { price: 0.1, qty: 2 }])).toBe(60.17);
   });
 });
 
@@ -61,28 +60,38 @@ describe("inquiry time", () => {
 });
 
 describe("WhatsApp message", () => {
-  const inquiry = {
-    customerName: "Aisha & Co",
-    customerPhone: "0123456789",
-    pickupPreference: "Isnin, 9 Nov · 9–11 pagi",
-    items: [
-      { id: "a", name: "Tudung Bawal", price: 8, qty: 2 },
-      { id: "b", name: "Blaus Linen Putih", price: 12.5, qty: 1 },
-    ],
-    totalPrice: 28.5,
-    notes: "",
+  const items = [
+    { code: "HFP-001", name: "Blaus Linen Putih", size: "M", price: 25 },
+    { code: "HFP-004", name: "Tudung Bawal Krim", size: "", price: 12.5 },
+  ];
+  const pickupOrder: Order = {
+    input: { customerName: "Aisha & Co", customerPhone: "0123456789", deliveryMethod: "pickup", pickupPreference: "Isnin, 16 Nov, 9 hingga 11 pagi", postState: "", postcode: "", notes: "", itemIds: [] },
+    items,
+    itemsTotal: 37.5,
+    postage: 0,
+    total: 37.5,
+    address: "",
+  };
+  const postOrder: Order = {
+    ...pickupOrder,
+    input: { ...pickupOrder.input, deliveryMethod: "post", pickupPreference: "", postState: "Selangor", postcode: "40150" },
+    postage: 10,
+    total: 47.5,
+    address: "No 12, Jalan Contoh 3\nTaman Contoh\n40150 Shah Alam",
   };
 
-  it("matches the design's format", () => {
-    expect(buildMessage("Hana's Family Preloved", inquiry, "INQ-1")).toBe(
+  it("lists the codes, sizes and pickup time", () => {
+    expect(buildMessage("Hana's Family Preloved", pickupOrder, "INQ-1")).toBe(
       [
-        "Salam Hana's Family Preloved, saya nak buat pertanyaan untuk item berikut:",
+        "Salam Hana's Family Preloved, saya nak beli item berikut:",
         "",
-        "1. Tudung Bawal × 2 = RM 16",
-        "2. Blaus Linen Putih × 1 = RM 12.50",
+        "1. HFP-001 Blaus Linen Putih (M) = RM 25",
+        "2. HFP-004 Tudung Bawal Krim = RM 12.50",
         "",
-        "Jumlah anggaran: RM 28.50",
-        "Ambil sendiri: Isnin, 9 Nov · 9–11 pagi",
+        "Jumlah item: RM 37.50",
+        "Ambil sendiri: Isnin, 16 Nov, 9 hingga 11 pagi",
+        "Jumlah anggaran: RM 37.50",
+        "",
         "Nama: Aisha & Co",
         "Telefon: 0123456789",
         "",
@@ -92,9 +101,28 @@ describe("WhatsApp message", () => {
     );
   });
 
+  it("adds the postage, state and address for a posted order, on one line", () => {
+    const message = buildMessage("Kedai", postOrder);
+    expect(message).toContain("Penghantaran: Pos ke Selangor (40150), pos RM 10");
+    expect(message).toContain("Jumlah anggaran: RM 47.50");
+    expect(message).toContain("Alamat: No 12, Jalan Contoh 3, Taman Contoh, 40150 Shah Alam");
+  });
+
+  it("never adds an address to a pickup order", () => {
+    expect(buildMessage("Kedai", { ...pickupOrder, address: "No 12 Jalan Rahsia" })).not.toContain("Jalan Rahsia");
+  });
+
+  it("can't be made to fake a reply from the shop with new lines", () => {
+    const sneaky = { ...postOrder, input: { ...postOrder.input, customerName: "Ali\n\nHana: Sudah dibayar, terima kasih", notes: "x\nRujukan: INQ-FAKE" }, address: "Jalan 1\r\n\r\nJumlah anggaran: RM 0" };
+    const lines = buildMessage("Kedai", sneaky).split("\n");
+    expect(lines.filter((l) => l.startsWith("Hana:"))).toEqual([]);
+    expect(lines.filter((l) => l.startsWith("Rujukan:"))).toEqual([]);
+    expect(lines.filter((l) => l.startsWith("Jumlah anggaran:"))).toEqual(["Jumlah anggaran: RM 47.50"]);
+  });
+
   it("adds notes only when there are some", () => {
-    expect(buildMessage("Kedai", inquiry)).not.toContain("Nota:");
-    expect(buildMessage("Kedai", { ...inquiry, notes: "Saiz M ada lagi?" })).toContain("Nota: Saiz M ada lagi?");
+    expect(buildMessage("Kedai", pickupOrder)).not.toContain("Nota:");
+    expect(buildMessage("Kedai", { ...pickupOrder, input: { ...pickupOrder.input, notes: "Saiz M ada lagi?" } })).toContain("Nota: Saiz M ada lagi?");
   });
 
   it("encodes the URL so symbols and newlines survive", () => {
@@ -116,12 +144,57 @@ describe("photo resizing", () => {
 
 describe("demo sample items", () => {
   it("gives each item its own picture, and every picture exists", () => {
-    const pictures = SAMPLE_ITEMS.map((item) => item.imageUrl);
+    const pictures = SAMPLE_ITEMS.map((item) => item.photos[0]);
     expect(new Set(pictures).size).toBe(SAMPLE_ITEMS.length);
     for (const picture of pictures) expect(existsSync(join("public", picture)), picture).toBe(true);
   });
 
-  it("only uses categories the admin form offers", () => {
-    for (const item of SAMPLE_ITEMS) expect(CATEGORIES).toContain(item.category);
+  it("only uses categories and conditions the backend accepts", () => {
+    for (const item of SAMPLE_ITEMS) {
+      expect(CATEGORIES).toContain(item.category);
+      expect(CONDITIONS).toContain(item.condition);
+      if (item.condition === FLAWED) expect(item.flawNotes).not.toBe("");
+    }
+  });
+});
+
+describe("demo mode follows the backend's rules", () => {
+  const store = new Map<string, string>();
+  beforeEach(() => {
+    store.clear();
+    vi.stubGlobal("localStorage", { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 13, 10, 0));
+    vi.resetModules();
+  });
+
+  const load = async () => (await import("../src/lib/demo")).demo;
+  const ask = (itemIds: string[], deliveryMethod: "pickup" | "post" = "pickup") => ({
+    customerName: "Ujian", customerPhone: "0123456789", deliveryMethod, pickupPreference: "Esok", postState: "Selangor", postcode: "40150", notes: "", itemIds,
+  });
+
+  it("charges a flat RM10 postage", async () => {
+    const demo = await load();
+    const [a, b] = demo.shop().items;
+    expect(demo.submit(ask([a.id, b.id], "post"))).toMatchObject({ postage: 10, total: a.price + b.price + 10 });
+  });
+
+  it("holds for 30 minutes, then puts the item back on sale", async () => {
+    const demo = await load();
+    const item = demo.shop().items[0];
+    demo.confirm(demo.submit(ask([item.id])).inquiryId);
+    expect(demo.shop().items[0].status).toBe("Reserved");
+    vi.advanceTimersByTime(30 * 60 * 1000);
+    expect(demo.shop().items[0].status).toBe("Available");
+  });
+
+  it("refuses an item someone else holds", async () => {
+    const demo = await load();
+    const item = demo.shop().items[0];
+    const first = demo.submit(ask([item.id])).inquiryId;
+    const second = demo.submit(ask([item.id])).inquiryId;
+    demo.confirm(first);
+    expect(() => demo.confirm(second)).toThrow("sudah ditempah");
+    expect(() => demo.submit(ask([item.id]))).toThrow("sudah ditempah");
   });
 });

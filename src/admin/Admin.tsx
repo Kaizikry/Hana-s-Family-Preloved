@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { config, DEMO_PIN, isDemo, PIN_LENGTH } from "../config";
-import { ApiError, fetchInquiries, logout, verifyPin } from "../lib/api";
+import { ApiError, fetchInquiries, fetchItems, logout, verifyPin } from "../lib/api";
 import { readJson, session, writeJson } from "../lib/storage";
-import type { InquiryRecord } from "../types";
+import type { AdminItem, InquiryRecord } from "../types";
 import { Inquiries } from "./Inquiries";
 import { Inventory } from "./Inventory";
 
@@ -77,6 +77,9 @@ function Dashboard({ token, onLogout, onExpired }: { token: string; onLogout: ()
   const [tab, setTab] = useState<"inventory" | "inquiries">("inventory");
   const [inquiries, setInquiries] = useState<InquiryRecord[] | null>(null);
   const [inquiriesFailed, setInquiriesFailed] = useState(false);
+  // Admin keeps its own list, drafts and hidden items included, apart from the shop's public one.
+  const [items, setItems] = useState<AdminItem[]>([]);
+  const [itemsStatus, setItemsStatus] = useState<"loading" | "ready" | "error">("loading");
 
   const handleError = useCallback((err: unknown): string => {
     if (err instanceof ApiError && err.code === "BAD_SESSION") onExpired();
@@ -93,6 +96,20 @@ function Dashboard({ token, onLogout, onExpired }: { token: string; onLogout: ()
       });
   }, [token, handleError]);
   useEffect(loadInquiries, [loadInquiries]);
+
+  const loadItems = useCallback(() => {
+    setItemsStatus("loading");
+    fetchItems(token)
+      .then((list) => {
+        setItems(list);
+        setItemsStatus("ready");
+      })
+      .catch((err) => {
+        handleError(err);
+        setItemsStatus("error");
+      });
+  }, [token, handleError]);
+  useEffect(loadItems, [loadItems]);
 
   const newCount = inquiries?.filter((q) => q.status === "Baru").length ?? 0;
 
@@ -111,10 +128,10 @@ function Dashboard({ token, onLogout, onExpired }: { token: string; onLogout: ()
           <button type="button" onClick={onLogout}>Log keluar</button>
         </div>
       </header>
-      {isDemo && <p className="demo-note">Mod demo: perubahan hanya disimpan dalam pelayar ini.</p>}
+      {isDemo && <div className="demo-note"><p className="container">Mod demo: perubahan hanya disimpan dalam pelayar ini.</p></div>}
       {tab === "inventory"
-        ? <Inventory token={token} onError={handleError} />
-        : <Inquiries token={token} inquiries={inquiries} failed={inquiriesFailed} retry={loadInquiries} setInquiries={setInquiries} onError={handleError} />}
+        ? <Inventory token={token} products={items} setProducts={setItems} status={itemsStatus} reload={loadItems} onError={handleError} />
+        : <Inquiries token={token} inquiries={inquiries} failed={inquiriesFailed} retry={loadInquiries} products={items} reloadItems={loadItems} onError={handleError} />}
     </div>
   );
 }

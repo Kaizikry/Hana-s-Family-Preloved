@@ -1,15 +1,13 @@
 import { config, DEMO_PIN, isDemo } from "../config";
-import { SAMPLE_ITEMS } from "../data/samples";
-import type { Inquiry, InquiryRecord, InquiryStatus, Plant, PlantDraft } from "../types";
-import { local, readJson, writeJson } from "./storage";
-
-const DEMO_PLANTS = "preloved.demoPlants";
-const DEMO_INQUIRIES = "preloved.demoInquiries";
+import type { AdminItem, InquiryInput, InquiryRecord, InquiryStatus, Item, ItemDraft, ListerStatus } from "../types";
+import { demo, DemoError } from "./demo";
 
 export class ApiError extends Error {
   constructor(
     message: string,
     public code?: string,
+    /** Item ids (for a buyer) or codes (for admin) that were taken or are gone. */
+    public unavailable: string[] = [],
   ) {
     super(message);
   }
@@ -19,7 +17,7 @@ async function parse(res: Response) {
   // Not an ApiError: callers show their own plain-language message for failures like this.
   if (!res.ok) throw new Error(`Apps Script answered ${res.status}`);
   const body = await res.json();
-  if (body.status !== "success") throw new ApiError(body.message, body.code);
+  if (body.status !== "success") throw new ApiError(String(body.message ?? "Tidak berjaya."), body.code, Array.isArray(body.unavailable) ? body.unavailable.map(String) : []);
   return body;
 }
 
@@ -32,38 +30,72 @@ const post = (body: object, init?: RequestInit) =>
     ...init,
   }).then(parse);
 
-const toPlant = (row: Record<string, unknown>) =>
-  ({
-    ...row,
-    id: String(row.id),
-    name: String(row.name),
-    price: Number(row.price) || 0,
-    stock: Number(row.stock) || 0,
-    status: row.status === "Sold Out" ? "Sold Out" : "Available",
-  }) as Plant;
+/** Runs a demo action with the same error shape the backend gives. */
+async function inDemo<T>(action: () => T): Promise<T> {
+  try {
+    return action();
+  } catch (err) {
+    if (err instanceof DemoError) throw new ApiError(err.message, err.code, err.unavailable);
+    throw err;
+  }
+}
 
-const demoPlants = () => readJson<Plant[]>(local, DEMO_PLANTS) ?? SAMPLE_ITEMS.map((p, i) => ({ ...p, id: `PLT-${1001 + i}` }));
-const demoInquiries = () => readJson<InquiryRecord[]>(local, DEMO_INQUIRIES) ?? [];
+const STATUSES = new Set(["Draf", "Available", "Reserved", "Sold", "Disembunyi"]);
+const text = (v: unknown) => (typeof v === "string" ? v : "");
 
-export async function fetchShop(): Promise<{ plants: Plant[]; whatsappNumber: string }> {
-  if (isDemo) return { plants: demoPlants(), whatsappNumber: "" };
-  const body = await fetch(config.appsScriptUrl).then(parse);
+/** Trusts nothing about the shape of what comes back. */
+function toItem(row: Record<string, unknown>): Item {
+  const measurements = row.measurements && typeof row.measurements === "object" ? (row.measurements as Item["measurements"]) : {};
   return {
-    plants: (body.plants as Record<string, unknown>[]).filter((p) => p.id && p.name).map(toPlant),
-    whatsappNumber: String(body.whatsappNumber ?? ""),
+    id: text(row.id),
+    code: text(row.code),
+    name: text(row.name),
+    colour: text(row.colour),
+    category: text(row.category),
+    brand: text(row.brand),
+    size: text(row.size),
+    condition: text(row.condition),
+    flawNotes: text(row.flawNotes),
+    measurements,
+    price: Number(row.price) || 0,
+    originalPrice: Number(row.originalPrice) || 0,
+    description: text(row.description),
+    photos: Array.isArray(row.photos) ? row.photos.filter((p): p is string => typeof p === "string") : [],
+    // An unknown status is treated as not for sale, never as Available.
+    status: STATUSES.has(text(row.status)) ? (row.status as Item["status"]) : "Sold",
+    createdAt: text(row.createdAt),
   };
 }
 
-export async function submitInquiry(inquiry: Inquiry): Promise<string> {
-  if (isDemo) {
-    const inquiryId = `INQ-${Date.now()}`;
-    const record: InquiryRecord = { ...inquiry, inquiryId, timestamp: new Date().toISOString(), status: "Baru" };
-    writeJson(local, DEMO_INQUIRIES, [...demoInquiries(), record]);
-    return inquiryId;
-  }
+export interface Shop {
+  items: Item[];
+  whatsappNumber: string;
+  postageFee: number;
+  holdMinutes: number;
+}
+
+export async function fetchShop(): Promise<Shop> {
+  if (isDemo) return demo.shop();
+  const body = await fetch(config.appsScriptUrl).then(parse);
+  return {
+    items: (Array.isArray(body.items) ? body.items : []).map(toItem).filter((i: Item) => i.id && i.name),
+    whatsappNumber: text(body.whatsappNumber),
+    postageFee: Number(body.postageFee) || 0,
+    holdMinutes: Number(body.holdMinutes) || 0,
+  };
+}
+
+export interface Submitted {
+  inquiryId: string;
+  itemsTotal: number;
+  postage: number;
+  total: number;
+}
+
+export async function submitInquiry(input: InquiryInput): Promise<Submitted> {
+  if (isDemo) return inDemo(() => demo.submit(input));
   // keepalive lets the log finish even if the page has already moved on to WhatsApp.
-  const body = await post({ action: "SUBMIT_INQUIRY", ...inquiry }, { keepalive: true });
-  return body.inquiryId;
+  return post({ action: "SUBMIT_INQUIRY", ...input }, { keepalive: true });
 }
 
 /** Returns a session token, so the passcode itself never has to be kept in the browser. */
@@ -79,37 +111,41 @@ export async function logout(token: string): Promise<void> {
   if (!isDemo) await post({ action: "LOGOUT", token });
 }
 
-export async function savePlant(token: string, draft: PlantDraft): Promise<Plant> {
-  if (isDemo) {
-    const { imageBase64, ...fields } = draft;
-    const saved: Plant = { ...fields, id: draft.id ?? `PLT-${Date.now()}`, imageUrl: imageBase64 ?? draft.imageUrl };
-    const plants = demoPlants();
-    const next = draft.id ? plants.map((p) => (p.id === saved.id ? saved : p)) : [...plants, saved];
-    if (!writeJson(local, DEMO_PLANTS, next)) throw new ApiError("Storan pelayar penuh. Buang satu foto dan cuba lagi.");
-    return saved;
-  }
-  const body = await post({ action: "SAVE_PLANT", token, plant: draft });
-  const { imageBase64: _uploaded, ...fields } = draft;
-  return { ...fields, id: body.plantId, imageUrl: body.imageUrl };
+/** Saves an item, uploading a newly picked photo first so it becomes the cover. */
+export async function saveItem(token: string, draft: ItemDraft, newPhoto?: string): Promise<Item> {
+  if (isDemo) return inDemo(() => demo.save(draft, newPhoto));
+  const photos = newPhoto ? [(await post({ action: "UPLOAD_PHOTO", token, imageBase64: newPhoto })).url as string, ...draft.photos.slice(1)] : draft.photos;
+  return toItem((await post({ action: "SAVE_ITEM", token, item: { ...draft, photos } })).item);
 }
 
-export async function deletePlant(token: string, id: string): Promise<void> {
-  if (isDemo) {
-    writeJson(local, DEMO_PLANTS, demoPlants().filter((p) => p.id !== id));
-    return;
-  }
-  await post({ action: "DELETE_PLANT", token, plantId: id });
+export async function setItemStatus(token: string, itemId: string, status: ListerStatus): Promise<void> {
+  if (isDemo) return inDemo(() => demo.setStatus(itemId, status));
+  await post({ action: "SET_ITEM_STATUS", token, itemId, status });
+}
+
+export async function deleteItem(token: string, itemId: string): Promise<void> {
+  if (isDemo) return inDemo(() => demo.remove(itemId));
+  await post({ action: "DELETE_ITEM", token, itemId });
+}
+
+export async function fetchItems(token: string): Promise<AdminItem[]> {
+  if (isDemo) return demo.listItems();
+  const body = await post({ action: "LIST_ITEMS", token });
+  return (Array.isArray(body.items) ? body.items : []).map((row: Record<string, unknown>) => ({ ...toItem(row), reservedFor: text(row.reservedFor), holdUntil: text(row.holdUntil) }));
 }
 
 export async function fetchInquiries(token: string): Promise<InquiryRecord[]> {
-  if (isDemo) return demoInquiries();
+  if (isDemo) return demo.inquiries();
   return (await post({ action: "LIST_INQUIRIES", token })).inquiries;
 }
 
-export async function setInquiryStatus(token: string, inquiryId: string, status: InquiryStatus): Promise<void> {
-  if (isDemo) {
-    writeJson(local, DEMO_INQUIRIES, demoInquiries().map((q) => (q.inquiryId === inquiryId ? { ...q, status } : q)));
-    return;
-  }
-  await post({ action: "SET_INQUIRY_STATUS", token, inquiryId, status });
+/** Reserves the inquiry's items for the hold time; returns when the hold ends. */
+export async function confirmInquiry(token: string, inquiryId: string, itemIds?: string[]): Promise<string> {
+  if (isDemo) return inDemo(() => demo.confirm(inquiryId, itemIds));
+  return (await post({ action: "CONFIRM_INQUIRY", token, inquiryId, ...(itemIds ? { itemIds } : {}) })).holdUntil;
+}
+
+export async function setInquiryStatus(token: string, inquiryId: string, status: InquiryStatus, trackingNo?: string): Promise<void> {
+  if (isDemo) return inDemo(() => demo.setInquiryStatus(inquiryId, status, trackingNo));
+  await post({ action: "SET_INQUIRY_STATUS", token, inquiryId, status, ...(trackingNo ? { trackingNo } : {}) });
 }

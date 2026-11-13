@@ -2,16 +2,28 @@
 
 | | |
 | --- | --- |
-| **Status** | Draft v1.0, for family review |
+| **Status** | v1.1, family decisions applied (section 0) |
 | **Date** | 13 November 2026 |
 | **Base project** | Hana's Garden (`lamanhana.netlify.app`), source in `Downloads\Documents\Garden web` |
 | **New project folder** | `D:\preloved web` |
 
+## 0. Decisions (13 November 2026)
+
+These override anything older in this document.
+
+| Question | Decision |
+| --- | --- |
+| Owners | **Dropped.** No owner on items, no "Almari" filter, no payout summary, no Sales tab |
+| Item codes | `HFP-` prefix, e.g. `HFP-042` |
+| Hold time | **30 minutes.** An unpaid hold expires by itself and the item is Available again. Marking the order **Dibayar** makes the hold firm |
+| Return rule | Accepted: undisclosed flaws only, unboxing video within 48 h |
+| Postage | **Flat RM10** for any posted order, whatever the weight or state. No weights, no rate table |
+| Washed before posting | Yes, so the policy page says so |
+
 **Who's who in this document**
 
 - **Mama (Hana):** the seller everyone talks to. Every inquiry goes to her WhatsApp, and she confirms, takes payment, reserves and marks items sold.
-- **Lister:** you. You photograph, measure and list every item for all three wardrobes, and look after the site.
-- **Papa:** an item owner only. He gives clothes to the lister and gets his share when they sell.
+- **Lister:** you. You photograph, measure and list every item, and look after the site.
 - **Buyer:** anyone who opens the site, usually from a WhatsApp link or Status post.
 
 ---
@@ -24,8 +36,7 @@ It reuses the Hana's Garden stack: a React and Vite static site on Netlify, with
 
 - every item is one of a kind, so the site needs a Reserve state
 - each item needs several photos and measurements
-- postage needs weight-based estimates
-- sales from three owners need to be split
+- posted orders need a postage charge (a flat RM10)
 - almost all buyers arrive from WhatsApp, so items must be easy to share there
 
 ---
@@ -46,14 +57,14 @@ Reuse a stack that already works, is security-tested and costs nothing. Sell thr
 | 2 | **Listing work.** Clothes are one of a kind and each needs 3–5 photos, measurements and a condition grade. Garden's one-photo form and Drive-hosted images weren't designed for hundreds of items. | **The lister does all listing.** The admin needs a quick phone flow for many photos, plus smaller thumbnails and a fallback plan for image hosting. |
 | 3 | **Double-selling.** Two buyers ask for the same RM20 dress and both reach Mama. | **Mama taps Reserve** once she confirms a buyer. Other buyers then see *Reserved*. Joining a waitlist is planned for v1.1. |
 | 4 | **Payment and trust with postage.** Buyers have to pay before an item is posted, and there's no buyer protection. | Mama confirms first, then the buyer pays by **DuitNow QR or transfer**, then Mama posts. The site reduces the trust problem with honest condition grades, photos of flaws, measurements and a clear policy page. |
-| 5 | **Mama handles everything.** Three wardrobes go through one phone, and someone has to know whose item sold. | Each item has an **owner**, the Sheet keeps a sales record, and admin shows a **payout summary for each owner**. The lister writes measurements and notes, so Mama never has to remember them. |
+| 5 | **Mama handles everything.** Three wardrobes go through one phone, and someone has to know whose item sold. | The lister writes measurements and notes on every item, so Mama never has to remember them. (Owner tracking was proposed here and dropped on 13 Nov 2026.) |
 
 ### 2.3 Combining both sides
 
 The **site is the family's own shop window and records everything**, and **WhatsApp handles talking to buyers and taking payment**. The site has to make sharing to WhatsApp quick, because nobody will find the site any other way.
 
 - **Kept from the plan:** RM0 stack, no fees, the WhatsApp flow, direct relationships with buyers.
-- **Taken from the counter-argument:** Reserve state, item codes, Status sharing, multi-photo listings, condition and measurement detail, owner tracking.
+- **Taken from the counter-argument:** Reserve state, item codes, Status sharing, multi-photo listings, condition and measurement detail.
 - **Given up:** marketplace search traffic and buyer protection. The site will only reach the family's own network.
 
 **Confidence: MEDIUM.** The riskiest assumption is that WhatsApp contacts alone bring enough buyers. **Test it** with a soft launch (section 14). If it falls short, cross-list the slowest items on Carousell with their item codes and point buyers back to Mama's WhatsApp.
@@ -68,8 +79,7 @@ The **site is the family's own shop window and records everything**, and **Whats
 2. Items are never sold twice by accident: **Reserved** is visible within one page load of Mama tapping it.
 3. Sharing an item to WhatsApp Status takes the lister **under 30 seconds**.
 4. Listing one item, with photos, takes the lister **under 3 minutes** on a phone.
-5. Every sale is credited to the right owner, so payouts aren't argued about.
-6. It stays **RM0 a month** to run (domain optional).
+5. It stays **RM0 a month** to run (domain optional).
 
 ### Non-goals for v1
 
@@ -89,8 +99,7 @@ The **site is the family's own shop window and records everything**, and **Whats
 | --- | --- | --- |
 | **Buyer** | "Does this fit me?", "Is it still available?", "How much with postage?", "Ask Mama a question" | Phone, opened from a WhatsApp link |
 | **Mama (Hana)** | Answer inquiries, reserve, take payment, mark sold, send tracking number | Phone, mostly WhatsApp, admin only for status taps |
-| **Lister** | Photograph, measure, list, price, post to Status, change prices, see payouts | Phone for listing, laptop for upkeep |
-| **Papa** | Know what of his sold and what he's owed | Asks the lister, or gets a screenshot of the payout summary |
+| **Lister** | Photograph, measure, list, price, post to Status, change prices | Phone for listing, laptop for upkeep |
 
 ---
 
@@ -119,20 +128,19 @@ The **site is the family's own shop window and records everything**, and **Whats
 ### 5.3 Lister adds a new batch
 
 1. Admin, then **+ Item baru**.
-2. Choose the **owner** (Mama, Papa or the lister). The last owner used stays selected.
-3. Pick up to **5 photos** from the camera roll and choose the cover. Photos are compressed in the browser and upload one at a time with progress.
-4. Fill in title, category, size, measurements, condition, price and weight. Any field can be copied from the previous item.
-5. **Simpan & tambah lagi**. The item gets the next code (`HFP-043`).
-6. Afterwards, tap **Kad Status** on any item to make a square image ready for WhatsApp Status.
+2. Pick up to **5 photos** from the camera roll and choose the cover. Photos are compressed in the browser and upload one at a time with progress.
+3. Fill in title, category, size, measurements, condition and price. Any field can be copied from the previous item.
+4. **Simpan & tambah lagi**. The item gets the next code (`HFP-043`).
+5. Afterwards, tap **Kad Status** on any item to make a square image ready for WhatsApp Status.
 
 ### 5.4 Mama handles an inquiry
 
 1. A new inquiry arrives on WhatsApp, and it's logged in admin under **Pertanyaan** with the status *Baru*.
 2. Mama opens it in admin and sees the items, which are still *Available*.
-3. She taps **Sahkan & Tempah**. The inquiry becomes *Disahkan*, its items become **Reserved**, and the hold ends in 48 hours (configurable).
+3. She taps **Sahkan & Tempah**. The inquiry becomes *Disahkan*, its items become **Reserved**, and the hold ends in 30 minutes unless she marks it paid.
 4. When the receipt arrives she taps **Dibayar**.
 5. For postage she taps **Dihantar** and types the tracking number, and **Hantar tracking** opens WhatsApp with a prefilled message. For pickup she taps **Diambil**.
-6. Either way the items become **Sold** and a sale is recorded for each owner.
+6. Either way the items become **Sold**.
 7. If the buyer drops out she taps **Batal**, and the items go back to *Available*.
 
 ---
@@ -145,8 +153,8 @@ The **site is the family's own shop window and records everything**, and **Whats
 
 | ID | Feature | Pri. | Notes |
 | --- | --- | --- | --- |
-| B1 | Catalogue grid with cover photo, title, price, size, condition, and an owner chip | P0 | Small thumbnails (`sz=w400`), lazy-loaded |
-| B2 | **Filters:** owner ("Almari Mama / Papa / [nama]"), category, size, condition, price range | P0 | Filters are saved in the URL hash so a filtered view can be shared |
+| B1 | Catalogue grid with cover photo, title, price, size and condition | P0 | Small thumbnails (`sz=w400`), lazy-loaded |
+| B2 | **Filters:** category, size, condition, price range | P0 | Filters are saved in the URL hash so a filtered view can be shared |
 | B3 | Sort: newest, cheapest, most expensive | P0 | |
 | B4 | Search by title, brand, colour or **item code** | P0 | Typing `042` finds HFP-042 |
 | B5 | Status badges: Baru masuk (≤7 days), **Ditempah**, **Terjual**, Harga turun | P0 | Sold items can be hidden or shown with a badge, set in Settings (default: shown for 14 days, as proof that things sell) |
@@ -158,7 +166,7 @@ The **site is the family's own shop window and records everything**, and **Whats
 | B11 | Floating WhatsApp button on every page for general questions | P0 | |
 | B12 | Bag (from Garden's basket): quantity is always 1 per item, re-checks availability when opened | P0 | |
 | B13 | Checkout with **delivery method**: Ambil sendiri or Pos | P0 | See section 9 |
-| B14 | **Postage estimate** by total weight and zone (Semenanjung or Sabah/Sarawak/Labuan) | P0 | Rates are kept in the Sheet, see section 9.2 |
+| B14 | **Flat postage** of RM10 added when the buyer picks Pos | P0 | See section 9.2 |
 | B15 | Prefilled WhatsApp message with item codes, totals, delivery method and reference | P0 | See section 10 |
 | B16 | Pages for Panduan saiz (how to measure), Gred keadaan, Polisi (payment, postage, returns, privacy) and Tentang kami | P0 | |
 | B17 | **Share button** on each item: native share sheet with the link, or a copied link | P0 | |
@@ -174,17 +182,16 @@ The **site is the family's own shop window and records everything**, and **Whats
 | ID | Feature | Pri. | Notes |
 | --- | --- | --- | --- |
 | A1 | PIN login, lockout and 6-hour session, unchanged from Garden | P0 | |
-| A2 | Item list with filters for status and owner, and counts per status | P0 | |
-| A3 | **Quick listing form**: owner, up to 5 photos, cover choice, all item fields | P0 | |
+| A2 | Item list with a status filter and counts per status | P0 | |
+| A3 | **Quick listing form**: up to 5 photos, cover choice, all item fields | P0 | |
 | A4 | **One photo per upload request**, with progress, retry and reordering | P0 | Avoids Apps Script timeouts, see section 12.2 |
 | A5 | **Simpan & tambah lagi** and **Salin item** (copy the previous item's fields) | P0 | For batches of the same brand or category |
 | A6 | Automatic **item code** (`HFP-001`, `HFP-002` …), never reused | P0 | Code counter kept in Script Properties |
 | A7 | Item statuses: Draf, Available, Reserved, Sold, Disembunyi (hidden) | P0 | See section 8 |
 | A8 | **Inquiry workflow**: Baru, Disahkan & Tempah, Dibayar, Dihantar or Diambil, Selesai, or Batal | P0 | Each step is one tap, and items follow automatically |
-| A9 | **Reserve with a deadline** (default 48 h). Admin highlights holds that have run out, and releasing one is a single tap | P0 | Items are never released automatically, Mama decides |
+| A9 | **Reserve for 30 minutes.** An unpaid hold expires by itself; Dibayar makes it firm. Admin shows the time left | P0 | Section 8.1 |
 | A10 | Tracking number field and **Hantar tracking** (prefilled WhatsApp with the courier's tracking link) | P0 | |
 | A11 | **Status Card**: a square 1080×1080 image (cover photo, code, price, size, condition, shop name) drawn in the browser and shared or downloaded | P0 | Uses the canvas the photo compressor already uses. The phone's share sheet sends it to WhatsApp Status |
-| A12 | **Payout summary** for each owner: items sold, total, a list with dates, filtered by month | P0 | Uses the Sales tab |
 | A13 | Change a price straight from the list, with an "Harga turun" flag | P1 | |
 | A14 | Waitlist count on Reserved and Available items, with a WhatsApp button to the first person waiting | P1 | |
 | A15 | Settings screen to edit postage rates, hold length and bundle rule from admin | P1 | In v1 these are edited directly in the Sheet |
@@ -235,7 +242,8 @@ Any state ──▶ Disembunyi (hidden from the shop, kept in the Sheet)
 
 - **Only Available items** can be added to the bag or checked out.
 - Reserving runs **inside the backend lock** (`LockService`, as in Garden). If one of the items isn't Available any more, the whole reserve is refused and the response names that item, so Mama doesn't confirm something that's gone.
-- A Sold item is never deleted, because it's part of the payout record. It can be hidden.
+- A hold lasts **30 minutes**. When it runs out unpaid, the item shows as Available again and can be reserved by someone else. **Dibayar** makes the hold firm, with no expiry.
+- A Sold or actively Reserved item can't be deleted or edited back to Available. It can be hidden.
 
 ### 8.2 Inquiry
 
@@ -253,18 +261,8 @@ Same as Garden: the next 7 days, three time slots, at Kampung Undang, Bukit Payo
 
 ### 9.2 Postage
 
-- **Zones:** Semenanjung, and Sabah/Sarawak/Labuan.
-- **Weight:** each item has `weightGrams`, with defaults by category if left blank (e.g. Baju 250 g, Seluar 450 g, Jaket 700 g, Kasut 1000 g). The bag adds **150 g for packaging**.
-- **Rates** are kept in the Sheet's `Settings` tab so the lister can change them without rebuilding the site:
-
-| Zone | ≤1 kg | ≤2 kg | ≤3 kg | each extra kg |
-| --- | --- | --- | --- | --- |
-| Semenanjung | RM _8_ | RM _10_ | RM _13_ | RM _3_ |
-| Sabah/Sarawak/Labuan | RM _15_ | RM _22_ | RM _30_ | RM _8_ |
-
-> The rates in italics are **placeholders**. Check current EasyParcel, Poslaju or J&T prices before launch.
-
-- The site always calls the total an **"anggaran"** (estimate), and Mama confirms the final postage on WhatsApp, the same wording Garden uses for prices.
+- **A flat RM10** is added to any order the buyer chooses to have posted, whatever the number of items, their weight or the state. It is set once in `backend/Code.gs` (`POSTAGE_FEE`) and sent to the shop with the catalogue.
+- The buyer picks their state from the list of 16 and types a 5-digit postcode. Both are checked by the backend.
 - **Address privacy:** the buyer types their address at checkout. It goes **only into the WhatsApp message**. The backend logs just the **state and postcode**, so the Sheet never holds full home addresses (section 13.3).
 
 ### 9.3 Payment
@@ -272,16 +270,16 @@ Same as Garden: the next 7 days, three time slots, at Kampung Undang, Bukit Payo
 1. The buyer sends the inquiry.
 2. Mama confirms the items and the final total, including postage, and taps **Sahkan & Tempah**.
 3. Mama sends her **DuitNow QR** image or bank details on WhatsApp. **The site never shows payment details**, so nobody pays for an item that isn't confirmed yet.
-4. The buyer pays within the hold time (48 h) and sends a receipt.
+4. The buyer pays within the hold time (30 minutes) and sends a receipt.
 5. Mama taps **Dibayar**, posts within the promised number of days (e.g. 3 working days), and sends the tracking number.
 
-### 9.4 Policy page content (to be confirmed by the family)
+### 9.4 Policy page content (confirmed by the family)
 
 - Items are preloved and sold as described. Measurements are taken flat, ±1 cm.
 - No returns for size or a change of mind. If an item arrives with an **undisclosed flaw**, a refund or return is possible (buyer sends an unboxing video within 48 h).
-- Unpaid holds are released after 48 h.
+- Unpaid holds are released after 30 minutes.
 - Postage is posted within N working days. The family isn't responsible for courier delays but will help chase a lost parcel.
-- Washed before posting: **only if true**.
+- Every item is washed before it is posted.
 - Privacy notice, reusing Garden's PDPA wording.
 
 ---
@@ -299,8 +297,8 @@ Salam Hana's Family Preloved, saya nak beli item berikut:
 2. HFP-057 Seluar Slack Hitam (L) = RM30
 
 Jumlah item: RM55
-Penghantaran: Pos ke Selangor (40150), anggaran pos RM8
-Jumlah anggaran: RM63
+Penghantaran: Pos ke Selangor (40150), pos RM10
+Jumlah anggaran: RM65
 
 Nama: Nurul Aisyah
 Telefon: 012-345 6789
@@ -331,20 +329,16 @@ Use a **new Sheet, Drive folder and Apps Script deployment**, separate from Gard
 | --- | --- | --- | --- |
 | `id` | text | yes | Internal, `ITM-<time>-<row>` like Garden |
 | `code` | text | yes | `HFP-042`, shown to buyers |
-| `title` | text | yes | e.g. "Blaus Linen Putih" |
-| `owner` | `Mama` / `Papa` / `<lister>` | yes (as an "Almari" label) | Names come from Settings |
-| `gender` | Wanita / Lelaki / Unisex | yes | |
+| `name` | text | yes | e.g. "Blaus Linen Putih" |
 | `category` | from list 7.1 | yes | |
 | `brand` | text | yes | Optional |
 | `size` | text | yes | From list 7.2 |
 | `measurementsJson` | JSON | yes | `{ "chest": 48, "length": 66 }` in cm |
-| `material`, `colour` | text | yes | |
+| `colour` | text | yes | |
 | `condition` | grade 7.3 | yes | |
 | `flawNotes` | text | yes | Required when the grade is *Ada kecacatan* |
 | `price` | number | yes | RM |
 | `originalPrice` | number | yes | Optional |
-| `negotiable` | boolean | yes | P1 |
-| `weightGrams` | number | yes | Used for the postage estimate |
 | `photosJson` | JSON array | yes | Up to 5 Drive URLs, the first is the cover |
 | `status` | Draf / Available / Reserved / Sold / Disembunyi | yes | The shop only receives Available, Reserved, and Sold within the display window |
 | `reservedFor` | inquiryId | **no** | |
@@ -355,21 +349,13 @@ Use a **new Sheet, Drive folder and Apps Script deployment**, separate from Gard
 
 ### 11.2 `Inquiries` tab
 
-`inquiryId`, `timestamp`, `customerName`, `customerPhone`, `deliveryMethod` (pickup/post), `pickupPreference`, `postState`, `postcode`, `itemsJson` (id, code, title, price, owner), `itemsTotal`, `postageEstimate`, `postageFinal`, `notes`, `status`, `trackingNo`, `courier`, `updatedAt`.
+`inquiryId`, `timestamp`, `customerName`, `customerPhone`, `deliveryMethod` (pickup/post), `pickupPreference`, `postState`, `postcode`, `itemsJson` (id, code, name, price), `itemsTotal`, `postage`, `total`, `notes`, `status`, `confirmedJson` (the item ids Mama reserved), `holdUntil`, `trackingNo`, `updatedAt`.
 
 There's **no address column**, on purpose.
 
-### 11.3 `Sales` tab (one row per item sold, used for payouts)
+### 11.3 Settings
 
-`saleId`, `soldAt`, `itemId`, `code`, `title`, `owner`, `price`, `inquiryId`, `deliveryMethod`.
-
-The **payout summary** groups this tab by `owner` and month. Postage is kept apart and never counts toward an owner's share.
-
-### 11.4 `Settings` tab (key/value, edited in the Sheet in v1)
-
-`ownerNames`, `holdHours` (48), `postRatesJson`, `packagingGrams` (150), `defaultWeightsJson`, `soldVisibleDays` (14), `bundleRuleJson` (P1), `shipWithinDays` (3).
-
-Public settings (owner labels, rates, policy numbers) are sent to the shop with the GET request. The `ADMIN_PIN`, `WHATSAPP_NUMBER`, `DRIVE_FOLDER_ID` and `NOTIFY_EMAIL` stay in **Script Properties**, as on Garden.
+No Settings tab: the few numbers live as constants at the top of `backend/Code.gs`: `POSTAGE_FEE` (10), `HOLD_MINUTES` (30), `SOLD_VISIBLE_DAYS` (14). The postage fee and hold time are sent to the shop with the catalogue, so the site and the backend never disagree. The `ADMIN_PIN`, `WHATSAPP_NUMBER`, `DRIVE_FOLDER_ID` and `NOTIFY_EMAIL` stay in **Script Properties**, as on Garden.
 
 ### 11.5 `Waitlist` tab (P1)
 
@@ -387,7 +373,7 @@ Public settings (owner labels, rates, policy numbers) are sent to the shop with 
 | Routing | Hash routes (`#/`, `#/pokok/:id`, `#/admin`) | Same, with `#/item/:code`, `#/saiz`, `#/polisi` and `#/tentang` |
 | Hosting | Netlify static site, `netlify.toml` security headers, page CSP added at build | Same |
 | Backend | One Apps Script web app: `doGet` for the catalogue, `doPost` with `action` switch | Same pattern, new actions (12.2) |
-| Data | Google Sheet tabs created on first use | Items, Inquiries, Sales, Settings, Waitlist |
+| Data | Google Sheet tabs created on first use | Items, Inquiries, Waitlist (P1) |
 | Photos | Compressed in the browser to JPEG (800×1000, quality 0.82), uploaded as base64, stored in Drive, served from `drive.google.com/thumbnail` | 1200 px long side for detail views. Thumbnails use `sz=w400` |
 | Auth | 6-digit PIN, 5 tries then a 15-minute lockout, UUID session in CacheService for 6 h | Same |
 | Safety | `safeCell` blocks formula injection, server checks prices, 30 inquiries an hour, 1000-character limit, `LockService` around writes | Same, plus availability checks on items and an allow-list for public columns |
@@ -406,8 +392,8 @@ Public settings (owner labels, rates, policy numbers) are sent to the shop with 
 | `SAVE_ITEM` | admin | Replaces `SAVE_PLANT`. Gives out the next code on the first save |
 | `SET_ITEM_STATUS` | admin | Draf, Available, Disembunyi only. Reserved and Sold only change through inquiries |
 | `CONFIRM_INQUIRY` | admin | **New.** Takes the inquiry and the items to confirm. Reserves them inside the lock, or refuses and names any item that's been taken |
-| `SET_INQUIRY_STATUS` | admin | Dibayar, Dihantar (+tracking), Diambil, Selesai, Batal. Dihantar and Diambil mark items Sold and write Sales rows. Batal releases items |
-| `LIST_INQUIRIES`, `LIST_SALES` | admin | `LIST_SALES` is new, for payouts |
+| `SET_INQUIRY_STATUS` | admin | Dibayar, Dihantar (+tracking), Diambil, Selesai, Batal. Dihantar and Diambil mark items Sold. Batal releases items |
+| `LIST_INQUIRIES` | admin | Unchanged |
 | `DELETE_ITEM` | admin | Only allowed for Draf items or items that never sold. Otherwise hide them |
 | `JOIN_WAITLIST` | public (P1) | Rate-limited like inquiries |
 
@@ -484,7 +470,7 @@ These come from the stack and from the choices above, and they're accepted for v
 | **Lockout** | 5 wrong PINs lock **everyone** out for 15 min, including Mama | A prankster could block admin for a while | Clear `pinLockedUntil` in Script Properties (documented in Garden's setup). Use a strong PIN |
 | **Double-selling gap** | Items stay Available until Mama taps Reserve | Two buyers can ask for the same item | Reserve check inside the lock, fresh status at checkout, waitlist in P1 |
 | **No payment protection** | Bank transfer or QR only, nothing held for the buyer | Some strangers won't pay first | Honest grades, flaw photos, measurements, policy page, pickup option, screenshots of buyer messages |
-| **Postage estimate** | Zone and weight table, not live courier prices | Final postage can differ | Always labelled "anggaran". Mama confirms. Update rates in Settings |
+| **Flat postage** | RM10 whatever the parcel | A heavy parcel to Sabah costs the family more than RM10 | Change `POSTAGE_FEE` if it stops covering the courier |
 | **Manual shipping** | No courier connection | Mama books, packs and types tracking numbers by hand | Accepted for low volume |
 | **Rate limit** | 30 inquiries per clock hour for the whole shop | A viral Status post could hit the cap. Buyers still reach WhatsApp, but some inquiries aren't logged | Raise the constant if it happens |
 | **One WhatsApp number** | Garden and Preloved both go to Mama | Messages for both shops mixed in one chat | Shop-name opening line and HFP- codes. WhatsApp Business labels |
@@ -497,10 +483,9 @@ These come from the stack and from the choices above, and they're accepted for v
 | Risk | Likelihood | Effect | What to do about it |
 | --- | --- | --- | --- |
 | Not enough buyers from WhatsApp alone | Medium | High | The soft launch test and Carousell fallback (section 14) |
-| Listing takes so long that the lister stops updating | Medium | High | Copy-item, saved owner, default weights, under 3 min per item, list in batches of 10 |
+| Listing takes so long that the lister stops updating | Medium | High | Copy-item, under 3 min per item, list in batches of 10 |
 | Mama gets overwhelmed by inquiries and statuses | Medium | Medium | Statuses change with one tap. Measurements and notes on the item page answer most questions. WhatsApp quick replies for common answers |
 | A buyer complains an item isn't as described | Low–Medium | Medium | Flaw photos are required, measurements are given, policy on unboxing videos |
-| A disagreement over whose sale it was | Low | Medium | Owner on every item, Sales tab, monthly payout screenshot |
 | Images stop loading from Drive | Low–Medium | High | Fallback to an image service (section 15) |
 | Fake or prank inquiries | Low | Low | Rate limit. An inquiry doesn't reserve anything, only Mama does |
 
@@ -508,15 +493,15 @@ These come from the stack and from the choices above, and they're accepted for v
 
 ## 17. Open questions for the family
 
-1. **Shop name and codes:** is the prefix `HFP-` right, and is the lister's wardrobe labelled with their name or a nickname?
+1. ~~**Shop name and codes:**~~ Answered: the `HFP-` prefix stays; no wardrobe labels.
 2. **Kids' clothes, household items or tudung only?** Category scope affects the filters.
-3. **Hold time:** 48 h, or 24 h?
-4. **Washed before posting** and **pet-free or smoke-free home**: true? They only go on the policy page if they are.
-5. **Return policy:** is the "undisclosed flaw only, with an unboxing video" rule acceptable?
+3. ~~**Hold time:** 48 h, or 24 h?~~ Answered: 30 minutes.
+4. ~~**Washed before posting**~~ Answered: yes. (Pet-free or smoke-free home is still open.)
+5. ~~**Return policy:**~~ Answered: accepted.
 6. **Sold items:** show them for 14 days as proof things sell, or hide them straight away?
-7. **Payout timing:** monthly, or after each sale?
+7. ~~**Payout timing:**~~ No longer applies: owners were dropped.
 8. **Custom domain:** keep a free `*.netlify.app` address, or buy a `.my` domain (about RM50–100 a year)?
-9. **Which courier** for the postage rates: EasyParcel, Poslaju or J&T?
+9. ~~**Which courier** for the postage rates~~ Answered: no rate table, a flat RM10.
 10. **Does Mama want email alerts** for new inquiries as well as WhatsApp?
 
 ---
@@ -525,21 +510,20 @@ These come from the stack and from the choices above, and they're accepted for v
 
 | Garden file | Preloved change |
 | --- | --- |
-| `src/types.ts` | `Plant` becomes `Item`. Adds owner, measurements, condition, photos, weight, code and new statuses |
-| `src/config.ts` | Shop name, owner labels, pickup details |
+| `src/types.ts` | `Plant` becomes `Item`. Adds measurements, condition, photos, code and new statuses |
+| `src/config.ts` | Shop name, pickup details |
 | `src/lib/api.ts` | New actions, demo mode for clothing |
 | `src/lib/whatsapp.ts` | Messages with codes, delivery method, postage, Tanya Mama and tracking |
 | `src/lib/format.ts` | Keeps `pickupDays` and phone checks. Adds postcode and state |
 | `src/lib/image.ts` | 1200 px size, square Status Card renderer |
-| **new** `src/lib/postage.ts` | Weight and zone estimate from Settings |
 | `src/store.tsx` | Bag quantity fixed at 1, re-check status on open, filters in the URL |
-| `src/shop/Catalog.tsx` | Filters, sort, badges, owner chips |
+| `src/shop/Catalog.tsx` | Filters, sort, badges |
 | `src/shop/PlantPage.tsx` becomes `ItemPage.tsx` | Gallery, measurements, condition, Tanya Mama, share |
 | `src/shop/Checkout.tsx` | Delivery method, address field (sent only in WhatsApp), postage estimate |
 | **new** `src/shop/InfoPages.tsx` | Panduan saiz, Gred keadaan, Polisi, Tentang kami |
 | `src/admin/PlantForm.tsx` becomes `ItemForm.tsx` | Multi-photo upload, copy item, save and add another |
 | `src/admin/Inquiries.tsx` | Full status flow, partial confirm, tracking |
-| **new** `src/admin/Payouts.tsx`, `src/admin/StatusCard.tsx` | Payout summary, Status Card maker |
+| **new** `src/admin/StatusCard.tsx` | Status Card maker |
 | `backend/Code.gs` | New tabs, public-column allow-list, new actions (12.2) |
 | `tests/*` | New backend and security tests from 13.2 |
 | `docs/SETUP.md`, `README.md` | Rewritten for the preloved shop |
