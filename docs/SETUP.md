@@ -85,6 +85,8 @@ Open **Log masuk admin** in the footer, or add `#/admin` to the site address.
 | `src/lib/api.ts` | All backend calls, plus the demo-mode stand-in |
 | `src/data/samples.ts` | The 12 demo items |
 | `src/lib/demo.ts` | Demo mode: the backend's rules kept in the browser, until the Sheet is connected |
+| `src/lib/catalog.ts`, `src/lib/route.ts`, `src/lib/photos.ts` | Catalogue filters and sorting, the hash routes, and which photo addresses may reach a page. All three treat the address bar as hostile |
+| `src/shop/InfoPages.tsx` | Panduan saiz, Gred keadaan, Polisi and Tentang kami |
 | `public/images/samples/` | Placeholder pictures for the demo items |
 | `backend/Code.gs` | The Google Apps Script backend |
 | `tests/` | Tests for the helpers and for `Code.gs`, run against fake Google services |

@@ -1,12 +1,18 @@
+import { useEffect } from "react";
 import { Dialog } from "../components/Dialog";
 import { Photo, statusText } from "../components/ui";
 import { money } from "../lib/format";
+import { photoAt } from "../lib/photos";
 import { useStore } from "../store";
 import { coverPhoto } from "../types";
 
 export function BasketDrawer() {
-  const { lines, items, count, total, postageFee, remove, basketOpen, setBasketOpen } = useStore();
+  const { lines, items, count, total, postageFee, remove, basketOpen, setBasketOpen, refresh } = useStore();
   const close = () => setBasketOpen(false);
+  // Fresh statuses every time the bag opens, so an item someone else reserved shows as gone.
+  useEffect(() => {
+    if (basketOpen) refresh();
+  }, [basketOpen, refresh]);
 
   return (
     <Dialog open={basketOpen} onClose={close} label="Bakul" variant="drawer">
@@ -20,7 +26,7 @@ export function BasketDrawer() {
         <ul className="drawer-lines">
           {lines.map(({ item, available }) => (
             <li key={item.id} className={available ? "line" : "line is-sold"}>
-              <div className="line-thumb"><Photo src={coverPhoto(item)} alt={item.name} /></div>
+              <div className="line-thumb"><Photo src={photoAt(coverPhoto(item), 400)} alt={item.name} /></div>
               <div>
                 <h3>{item.name}</h3>
                 {available

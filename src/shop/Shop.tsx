@@ -1,18 +1,27 @@
 import { BasketIcon, Hanger } from "../components/ui";
 import { config, isDemo } from "../config";
-import { money } from "../lib/format";
+import { money, toWhatsAppNumber } from "../lib/format";
+import type { Route } from "../lib/route";
+import { generalMessage, whatsappUrl } from "../lib/whatsapp";
 import { useStore } from "../store";
 import { BasketDrawer } from "./BasketDrawer";
 import { Catalog } from "./Catalog";
 import { Checkout } from "./Checkout";
+import { InfoPage } from "./InfoPages";
 import { ItemPage } from "./ItemPage";
 import { ThankYou } from "./ThankYou";
 
-const ITEM_ROUTE = "/item/";
+const PAGE_LINKS = [
+  ["#/saiz", "Panduan saiz"],
+  ["#/gred", "Gred keadaan"],
+  ["#/polisi", "Polisi"],
+  ["#/tentang", "Tentang kami"],
+] as const;
 
-export function Shop({ route }: { route: string }) {
-  const { count, total, lines, setBasketOpen } = useStore();
-  const browsing = route === "/" || route.startsWith(ITEM_ROUTE);
+export function Shop({ route, query }: { route: Route; query: string }) {
+  const { count, total, lines, whatsappNumber, setBasketOpen } = useStore();
+  const browsing = route.name === "catalog" || route.name === "item";
+  const askUrl = whatsappNumber ? whatsappUrl(toWhatsAppNumber(whatsappNumber), generalMessage(config.shopName)) : "";
 
   return (
     <>
@@ -22,17 +31,21 @@ export function Shop({ route }: { route: string }) {
       <header className="site-header">
         <div className="container site-header-inner">
           <a className="wordmark" href="#/"><Hanger />{config.shopName}</a>
-          <button type="button" className="basket-link" onClick={() => setBasketOpen(true)}>
-            <BasketIcon /> Bakul <span className="count">{count}</span>
-          </button>
+          <div className="nav-actions">
+            {askUrl && <a className="basket-link" href={askUrl} target="_blank" rel="noreferrer" aria-label={`Tanya ${config.ownerName} di WhatsApp`}>Tanya<span className="nav-owner"> {config.ownerName}</span></a>}
+            <button type="button" className="basket-link" aria-label={`Bakul, ${count} item`} onClick={() => setBasketOpen(true)}>
+              <BasketIcon /> <span className="nav-word">Bakul</span> <span className="count">{count}</span>
+            </button>
+          </div>
         </div>
       </header>
 
       <main>
-        {route.startsWith(ITEM_ROUTE) ? <ItemPage id={decodeURIComponent(route.slice(ITEM_ROUTE.length))} />
-          : route === "/tempahan" ? <Checkout />
-          : route === "/terima-kasih" ? <ThankYou />
-          : <Catalog />}
+        {route.name === "item" ? <ItemPage id={route.id} />
+          : route.name === "checkout" ? <Checkout />
+          : route.name === "thanks" ? <ThankYou />
+          : route.name === "info" ? <InfoPage page={route.page} />
+          : <Catalog query={query} />}
       </main>
 
       <footer className="site-footer">
@@ -40,9 +53,10 @@ export function Shop({ route }: { route: string }) {
           <p className="colophon">
             <strong>{config.shopName}</strong>, {config.pickupArea}.
           </p>
-          <p className="colophon-links">
+          <nav className="colophon-links" aria-label="Maklumat kedai">
+            {PAGE_LINKS.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
             <a href="#/admin">Log masuk admin</a>
-          </p>
+          </nav>
           <p className="credits" data-credits>
             Foto: <a href="https://commons.wikimedia.org/wiki/File:Wooden_coat_hangers.jpg">Mike Peel</a> (CC BY-SA 4.0, Wikimedia Commons)
           </p>

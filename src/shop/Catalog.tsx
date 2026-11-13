@@ -1,9 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Photo, statusText } from "../components/ui";
 import { config } from "../config";
+import { applyFilters, DEFAULT_FILTERS, filtersToQuery, isFiltered, isNew, parseFilters, PRICE_RANGES, sizesOf, SORTS, type Filters } from "../lib/catalog";
 import { money } from "../lib/format";
+import { photoAt } from "../lib/photos";
+import { itemHash } from "../lib/route";
 import { useStore } from "../store";
-import { CATEGORIES, coverPhoto, isAvailable, type Item } from "../types";
+import { CATEGORIES, CONDITIONS, coverPhoto, isAvailable, type Item } from "../types";
 
 // A library stand-in until there is a photo of the family's own clothes.
 const HERO_PHOTO = "images/photos/wooden-coat-hangers-1920.jpg";
@@ -15,19 +18,25 @@ function showCatalog() {
   document.getElementById(CATALOG_ID)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
 }
 
-export function Catalog() {
+export function Catalog({ query }: { query: string }) {
   const { products, status, reload } = useStore();
-  const [category, setCategory] = useState("Semua");
-  const [query, setQuery] = useState("");
+  // The address holds the filters. They are read against the catalogue, so a size is only
+  // accepted once the items it belongs to have loaded.
+  const [rawQuery, setRawQuery] = useState(query);
+  useEffect(() => setRawQuery(query), [query]);
+  const filters = useMemo(() => parseFilters(rawQuery, products), [rawQuery, products]);
 
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return products.filter(
-      (p: Item) => (category === "Semua" || p.category === category) && (!q || `${p.name} ${p.colour} ${p.brand} ${p.code}`.toLowerCase().includes(q)),
-    );
-  }, [products, category, query]);
+  const setFilters = (patch: Partial<Filters>) => {
+    const next = filtersToQuery({ ...filters, ...patch });
+    setRawQuery(next);
+    // replaceState, not a hash change: filtering must not jump the page back to the top.
+    window.history.replaceState(null, "", `#/${next ? `?${next}` : ""}`);
+  };
 
-  const usedCategories = CATEGORIES.filter((c) => products.some((p: Item) => p.category === c));
+  const shown = useMemo(() => applyFilters(products, filters), [products, filters]);
+  const usedCategories = CATEGORIES.filter((c) => products.some((p) => p.category === c));
+  const sizes = useMemo(() => sizesOf(products), [products]);
+  const usedConditions = CONDITIONS.filter((c) => products.some((p) => p.condition === c));
 
   return (
     <>
@@ -58,16 +67,52 @@ export function Catalog() {
           <div className="catalog-head">
             <h2>Katalog pakaian</h2>
             <div className="catalog-tools">
-              <p>Semua harga ialah anggaran. {config.ownerName} akan sahkan stok dan harga melalui WhatsApp.</p>
-              <input type="search" aria-label="Cari item" placeholder="Cari nama, warna atau kod…" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <p>Semua harga ialah anggaran. {config.ownerName} akan sahkan item dan harga melalui WhatsApp.</p>
+              <input type="search" aria-label="Cari item" maxLength={60} placeholder="Cari nama, warna atau kod…" value={filters.q} onChange={(e) => setFilters({ q: e.target.value })} />
             </div>
           </div>
 
           {usedCategories.length > 1 && (
             <div className="tabs" role="group" aria-label="Kategori">
-              {["Semua", ...usedCategories].map((name) => (
-                <button key={name} type="button" aria-pressed={category === name} onClick={() => setCategory(name)}>{name}</button>
+              {["", ...usedCategories].map((name) => (
+                <button key={name || "semua"} type="button" aria-pressed={filters.category === name} onClick={() => setFilters({ category: name })}>{name || "Semua"}</button>
               ))}
+            </div>
+          )}
+
+          {products.length > 0 && (
+            <div className="filter-bar">
+              <label className="field">
+                <span>Saiz</span>
+                <select value={filters.size} onChange={(e) => setFilters({ size: e.target.value })}>
+                  <option value="">Semua saiz</option>
+                  {sizes.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>Keadaan</span>
+                <select value={filters.condition} onChange={(e) => setFilters({ condition: e.target.value })}>
+                  <option value="">Semua keadaan</option>
+                  {usedConditions.map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>Harga</span>
+                <select value={filters.price} onChange={(e) => setFilters({ price: e.target.value })}>
+                  <option value="">Semua harga</option>
+                  {PRICE_RANGES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>Susun</span>
+                <select value={filters.sort} onChange={(e) => setFilters({ sort: e.target.value as Filters["sort"] })}>
+                  {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </label>
+              <p className="filter-count" role="status">
+                {shown.length} item
+                {isFiltered(filters) && <button type="button" className="link-btn" onClick={() => setFilters({ ...DEFAULT_FILTERS, sort: filters.sort })}>Kosongkan penapis</button>}
+              </p>
             </div>
           )}
 
@@ -84,8 +129,8 @@ export function Catalog() {
 
           {products.length > 0 && shown.length === 0 && (
             <div className="notice">
-              <p>Tiada item dengan nama itu.</p>
-              <button type="button" className="btn btn-quiet" onClick={() => { setQuery(""); setCategory("Semua"); }}>Lihat semua item</button>
+              <p>Tiada item yang sepadan dengan penapis ini.</p>
+              <button type="button" className="btn btn-quiet" onClick={() => setFilters(DEFAULT_FILTERS)}>Lihat semua item</button>
             </div>
           )}
 
@@ -100,19 +145,23 @@ export function Catalog() {
 
 function ItemCard({ item }: { item: Item }) {
   const { inBag, add, setBasketOpen } = useStore();
-  const href = `#/item/${encodeURIComponent(item.id)}`;
+  const href = itemHash(item.id);
   const available = isAvailable(item);
+  const tag = available ? (isNew(item) ? "Baru" : "") : statusText(item);
 
   return (
     <article className={available ? "plant-card" : "plant-card is-sold"}>
-      <a className="arch" href={href} tabIndex={-1} aria-hidden="true"><Photo src={coverPhoto(item)} alt={item.name} /></a>
+      <a className="arch" href={href} tabIndex={-1} aria-hidden="true">
+        <Photo src={photoAt(coverPhoto(item), 400)} alt={item.name} />
+        {tag && <span className={available ? "card-tag" : "card-tag card-tag-quiet"}>{tag}</span>}
+      </a>
       <div className="plant-card-title">
         <h3><a href={href}>{item.name}</a></h3>
         <strong>{money(item.price)}</strong>
       </div>
-      <p className="muted">{[item.size, item.colour].filter(Boolean).join(", ")}</p>
+      <p className="muted">{[item.size, item.colour].filter(Boolean).join(", ")}{item.originalPrice > item.price && <> <s>{money(item.originalPrice)}</s></>}</p>
       <div className="plant-card-foot">
-        <span className={available ? "muted" : "low"}>{available ? item.code : statusText(item)}</span>
+        <span className={available ? "muted" : "low"}>{available ? item.code : `${item.code}, ${statusText(item).toLowerCase()}`}</span>
         {available && (inBag(item.id)
           ? <button type="button" className="btn btn-quiet btn-small" onClick={() => setBasketOpen(true)}>Dalam bakul</button>
           : <button type="button" className="btn btn-quiet btn-small" onClick={() => add(item.id)} aria-label={`Tambah ${item.name}`}>Tambah</button>)}

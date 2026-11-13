@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Choices, Field } from "../components/ui";
 import { config } from "../config";
 import { ApiError, submitInquiry, type Submitted } from "../lib/api";
@@ -30,7 +30,11 @@ function validate(form: Form) {
 type Outcome = { ok: Submitted } | { error: unknown } | { timeout: true };
 
 export function Checkout() {
-  const { items, count, total, postageFee, whatsappNumber, clearBasket, setBasketOpen, reload } = useStore();
+  const { items, count, total, postageFee, whatsappNumber, clearBasket, setBasketOpen, reload, refresh } = useStore();
+  // Re-checked on arrival, so the summary never offers an item that went to someone else meanwhile.
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState<Partial<Form>>({});
   const [sending, setSending] = useState(false);

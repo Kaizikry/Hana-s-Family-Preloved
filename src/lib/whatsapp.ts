@@ -11,8 +11,19 @@ export interface Order {
   address: string;
 }
 
-/** One line, so a pasted address can't break the message into something that looks like Mama's reply. */
-const oneLine = (text: string) => text.replace(/\s*[\r\n]+\s*/g, ", ").replace(/\s{2,}/g, " ").trim();
+/**
+ * One line, so pasted text can't break the message into something that looks like Mama's reply.
+ * Includes the Unicode line and paragraph separators, which WhatsApp also shows as new lines.
+ */
+const oneLine = (text: string) => text.replace(/\s*[\r\n\u000B\u000C\u0085\u2028\u2029]+\s*/g, ", ").replace(/\s{2,}/g, " ").trim();
+
+/** Tanya: a question about one item, with its code and a link back to it. */
+export function askMessage(shopName: string, item: Pick<Item, "code" | "name" | "price">, link: string): string {
+  return `Salam ${shopName}, saya nak tanya tentang ${item.code} ${oneLine(item.name)} (${money(item.price)}): ${link}`;
+}
+
+/** A general question from any page. */
+export const generalMessage = (shopName: string) => `Salam ${shopName}, saya nak tanya tentang pakaian di kedai anda.`;
 
 export function buildMessage(shopName: string, order: Order, inquiryId?: string): string {
   const { input } = order;

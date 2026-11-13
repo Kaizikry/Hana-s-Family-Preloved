@@ -20,18 +20,21 @@ function useStoreValue() {
   const [bag, setBag] = useState<string[]>(readBag);
   const [basketOpen, setBasketOpen] = useState(false);
 
+  const apply = useCallback((shop: Awaited<ReturnType<typeof fetchShop>>) => {
+    setProducts(shop.items);
+    setWhatsappNumber(shop.whatsappNumber);
+    setPostageFee(shop.postageFee);
+    setHoldMinutes(shop.holdMinutes);
+    setStatus("ready");
+  }, []);
+
   const reload = useCallback(() => {
     setStatus("loading");
-    return fetchShop()
-      .then((shop) => {
-        setProducts(shop.items);
-        setWhatsappNumber(shop.whatsappNumber);
-        setPostageFee(shop.postageFee);
-        setHoldMinutes(shop.holdMinutes);
-        setStatus("ready");
-      })
-      .catch(() => setStatus("error"));
-  }, []);
+    return fetchShop().then(apply).catch(() => setStatus("error"));
+  }, [apply]);
+
+  /** A quiet re-check of statuses: no loading state, and on failure the page keeps what it has. */
+  const refresh = useCallback(() => fetchShop().then(apply).catch(() => {}), [apply]);
   useEffect(() => {
     reload();
   }, [reload]);
@@ -52,7 +55,7 @@ function useStoreValue() {
   const items = useMemo(() => lines.filter((line) => line.available).map((line) => line.item), [lines]);
 
   return {
-    products, setProducts, whatsappNumber, postageFee, holdMinutes, status, reload,
+    products, setProducts, whatsappNumber, postageFee, holdMinutes, status, reload, refresh,
     lines, items, add, remove, clearBasket, basketOpen, setBasketOpen,
     inBag: (id: string) => bag.includes(id),
     count: items.length,

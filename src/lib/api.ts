@@ -1,6 +1,7 @@
 import { config, DEMO_PIN, isDemo } from "../config";
 import type { AdminItem, InquiryInput, InquiryRecord, InquiryStatus, Item, ItemDraft, ListerStatus } from "../types";
 import { demo, DemoError } from "./demo";
+import { isSafePhoto } from "./photos";
 
 export class ApiError extends Error {
   constructor(
@@ -60,7 +61,7 @@ function toItem(row: Record<string, unknown>): Item {
     price: Number(row.price) || 0,
     originalPrice: Number(row.originalPrice) || 0,
     description: text(row.description),
-    photos: Array.isArray(row.photos) ? row.photos.filter((p): p is string => typeof p === "string") : [],
+    photos: Array.isArray(row.photos) ? row.photos.filter(isSafePhoto).slice(0, 5) : [],
     // An unknown status is treated as not for sale, never as Available.
     status: STATUSES.has(text(row.status)) ? (row.status as Item["status"]) : "Sold",
     createdAt: text(row.createdAt),
@@ -75,7 +76,10 @@ export interface Shop {
 }
 
 export async function fetchShop(): Promise<Shop> {
-  if (isDemo) return demo.shop();
+  if (isDemo) {
+    const shop = demo.shop();
+    return { ...shop, items: shop.items.map((item) => ({ ...item, photos: item.photos.filter(isSafePhoto) })) };
+  }
   const body = await fetch(config.appsScriptUrl).then(parse);
   return {
     items: (Array.isArray(body.items) ? body.items : []).map(toItem).filter((i: Item) => i.id && i.name),

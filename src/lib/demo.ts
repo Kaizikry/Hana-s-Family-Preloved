@@ -42,7 +42,7 @@ const codeFor = (n: number) => `HFP-${String(n).padStart(3, "0")}`;
 function seed(): StoredItem[] {
   const now = Date.now();
   writeJson(local, COUNTER_KEY, SAMPLE_ITEMS.length);
-  return SAMPLE_ITEMS.map((s, i) => ({ ...s, id: `ITM-demo-${i + 1}`, code: codeFor(i + 1), createdAt: iso(now), reservedFor: "", reservedUntil: "", soldAt: s.status === "Sold" ? iso(now) : "" }));
+  return SAMPLE_ITEMS.map((s, i) => ({ ...s, id: `ITM-demo-${i + 1}`, code: codeFor(i + 1), createdAt: iso(now - i * 2 * 24 * 60 * 60 * 1000), reservedFor: "", reservedUntil: "", soldAt: s.status === "Sold" ? iso(now) : "" }));
 }
 
 const loadItems = () => readJson<StoredItem[]>(local, ITEMS_KEY) ?? seed();
