@@ -17,13 +17,15 @@ export function Shop({ route }: { route: string }) {
   return (
     <>
       {isDemo && (
-        <p className="demo-note">Pratonton: nama, harga dan stok ini contoh sahaja sehingga kedai disambungkan ke Google Sheet.</p>
+        <div className="demo-note"><p className="container">Pratonton: nama, harga dan stok ini contoh sahaja sehingga kedai disambungkan ke Google Sheet.</p></div>
       )}
       <header className="site-header">
-        <a className="wordmark" href="#/"><Hanger />{config.shopName}</a>
-        <button type="button" className="basket-link" onClick={() => setBasketOpen(true)}>
-          <BasketIcon /> Bakul <span className="count">{count}</span>
-        </button>
+        <div className="container site-header-inner">
+          <a className="wordmark" href="#/"><Hanger />{config.shopName}</a>
+          <button type="button" className="basket-link" onClick={() => setBasketOpen(true)}>
+            <BasketIcon /> Bakul <span className="count">{count}</span>
+          </button>
+        </div>
       </header>
 
       <main>
@@ -34,8 +36,17 @@ export function Shop({ route }: { route: string }) {
       </main>
 
       <footer className="site-footer">
-        <span>{config.shopName} · {config.pickupArea}</span>
-        <a href="#/admin">Log masuk admin</a>
+        <div className="container site-footer-inner">
+          <p className="colophon">
+            <strong>{config.shopName}</strong>, {config.pickupArea}.
+          </p>
+          <p className="colophon-links">
+            <a href="#/admin">Log masuk admin</a>
+          </p>
+          <p className="credits" data-credits>
+            Foto: <a href="https://commons.wikimedia.org/wiki/File:Wooden_coat_hangers.jpg">Mike Peel</a> (CC BY-SA 4.0, Wikimedia Commons)
+          </p>
+        </div>
       </footer>
 
       {browsing && lines.length > 0 && (

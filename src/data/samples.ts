@@ -32,6 +32,6 @@ export const SAMPLE_ITEMS: PlantDraft[] = [
   item("slack-kelabu", "Seluar Slack Kelabu", "Lelaki", 25, { colour: "Kelabu", condition: "Baik", size: "Pinggang 34", description: "Sesuai untuk ke pejabat. Panjang 100 cm." }),
   item("jeans-biru", "Seluar Jeans Biru", "Wanita", 30, { colour: "Biru", brand: "Levi's", condition: "Baik", size: "Pinggang 28", description: "Potongan lurus, sedikit pudar di lutut." }),
   item("kasut-putih", "Kasut Sukan Putih", "Kasut & Beg", 60, { colour: "Putih", condition: "Baik", size: "EU 41", description: "Tapak masih elok, sudah dicuci." }),
-  item("beg-coklat", "Beg Tangan Coklat", "Kasut & Beg", 40, { colour: "Coklat", condition: "Seperti baru", size: "—", description: "Kulit sintetik, ada zip di dalam." }),
+  item("beg-coklat", "Beg Tangan Coklat", "Kasut & Beg", 40, { colour: "Coklat", condition: "Seperti baru", size: "", description: "Kulit sintetik, ada zip di dalam." }),
   item("jaket-denim", "Jaket Denim", "Wanita", 38, { colour: "Biru denim", condition: "Ada kecacatan", size: "M", description: "Satu butang di lengan kiri tertanggal. Selain itu elok." }),
 ];

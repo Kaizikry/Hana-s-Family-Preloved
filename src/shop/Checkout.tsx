@@ -85,7 +85,7 @@ export function Checkout() {
 
   return (
     <div className="page">
-      <button type="button" className="back" onClick={() => setBasketOpen(true)}>← Bakul</button>
+      <button type="button" className="back" onClick={() => setBasketOpen(true)}>Kembali ke bakul</button>
       <h1>Butiran tempahan</h1>
       <p className="page-lead">Isi maklumat di bawah. Pertanyaan anda akan direkod, kemudian WhatsApp dibuka dengan senarai item yang dipilih.</p>
 
@@ -112,7 +112,7 @@ export function Checkout() {
             {items.map((item) => <li key={item.id}><span>{item.name} × {item.qty}</span> <strong>{money(item.price * item.qty)}</strong></li>)}
           </ul>
           <p className="total"><span>Jumlah anggaran</span> <strong>{money(total)}</strong></p>
-          <p className="small">Ambil sendiri di {config.pickupPlace}{form.day && `, ${form.day}`}{form.time && ` · ${form.time}`}</p>
+          <p className="small">Ambil sendiri di {config.pickupPlace}{form.day && `, ${form.day}`}{form.time && `, ${form.time}`}</p>
           <button type="submit" className="btn btn-wide" disabled={sending}>
             {sending ? "Sedang merekod…" : "Hantar Pertanyaan via WhatsApp"}
           </button>

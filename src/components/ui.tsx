@@ -3,9 +3,8 @@ import type { Plant } from "../types";
 
 export function Hanger() {
   return (
-    <svg className="hanger" viewBox="0 0 32 40" aria-hidden="true">
-      <path d="M0 40V16a16 16 0 0 1 32 0v24z" fill="var(--moss)" />
-      <path d="M13.5 17.5a2.5 2.5 0 1 1 2.5 2.5V22M16 22 6 30h20z" fill="none" stroke="var(--paper)" strokeWidth="2" strokeLinejoin="round" />
+    <svg className="hanger" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9.5 6.5a2.5 2.5 0 1 1 2.5 2.5V11M12 11 3 18h18z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }

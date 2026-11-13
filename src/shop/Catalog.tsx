@@ -5,8 +5,15 @@ import { money } from "../lib/format";
 import { useStore } from "../store";
 import { CATEGORIES, inStock, type Plant } from "../types";
 
-// Placeholders until there are real shop photos.
-const HERO_PHOTOS = ["images/samples/kurung-biru.svg", "images/samples/blaus-putih.svg", "images/samples/bawal-krim.svg"];
+// A library stand-in until there is a photo of the family's own clothes.
+const HERO_PHOTO = "images/photos/wooden-coat-hangers-1920.jpg";
+const CATALOG_ID = "katalog";
+
+// A button, not a link: a "#katalog" href would be read as a route by the hash router.
+function showCatalog() {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById(CATALOG_ID)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+}
 
 export function Catalog() {
   const { plants, status, reload } = useStore();
@@ -25,58 +32,67 @@ export function Catalog() {
   return (
     <>
       <section className="hero">
-        <div className="hero-text">
-          <h1>Dari almari kami, sedia untuk almari anda.</h1>
-          <p>Pilih pakaian, masukkan ke bakul, dan hantar satu pertanyaan terus ke WhatsApp {config.ownerName}.</p>
-        </div>
-        <div className="hero-arches" aria-hidden="true">
-          {HERO_PHOTOS.map((src) => <img key={src} src={src} alt="" />)}
+        <div className="container hero-inner">
+          <figure className="hero-photo" data-slot="hero" data-alt="Pakaian keluarga sendiri, tergantung atau berlipat, dalam cahaya siang">
+            <img src={HERO_PHOTO} width={1920} height={1986} alt="Penyangkut baju kayu bertindan di atas rak kayu" fetchPriority="high" />
+          </figure>
+          <div className="hero-text">
+            <h1>Dari almari kami, sedia untuk almari anda.</h1>
+            <div className="hero-side">
+              <p className="lead">Pilih pakaian, masukkan ke bakul, dan hantar satu pertanyaan terus ke WhatsApp {config.ownerName}.</p>
+              <button type="button" className="btn btn-primary" onClick={showCatalog}>Lihat pakaian</button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <p className="pickup-band">
-        <strong>Ambil sendiri di {config.pickupArea}</strong>
-        <span>{config.pickupHours}</span>
-      </p>
+      <div className="pickup-band">
+        <p className="container pickup-band-inner">
+          <strong>Ambil sendiri di {config.pickupArea}</strong>
+          <span>{config.pickupHours}</span>
+        </p>
+      </div>
 
-      <section className="catalog" aria-label="Katalog pakaian">
-        <div className="catalog-head">
-          <div>
+      <section className="catalog" id={CATALOG_ID} aria-label="Katalog pakaian">
+        <div className="container">
+          <div className="catalog-head">
             <h2>Katalog pakaian</h2>
-            <p>Semua harga ialah anggaran. {config.ownerName} akan sahkan stok dan harga melalui WhatsApp.</p>
+            <div className="catalog-tools">
+              <p>Semua harga ialah anggaran. {config.ownerName} akan sahkan stok dan harga melalui WhatsApp.</p>
+              <input type="search" aria-label="Cari item" placeholder="Cari nama atau warna…" value={query} onChange={(e) => setQuery(e.target.value)} />
+            </div>
           </div>
-          <input type="search" aria-label="Cari item" placeholder="Cari nama atau warna…" value={query} onChange={(e) => setQuery(e.target.value)} />
+
+          {usedCategories.length > 1 && (
+            <div className="tabs" role="group" aria-label="Kategori">
+              {["Semua", ...usedCategories].map((name) => (
+                <button key={name} type="button" aria-pressed={category === name} onClick={() => setCategory(name)}>{name}</button>
+              ))}
+            </div>
+          )}
+
+          {status === "loading" && plants.length === 0 && <p className="notice" role="status">Sedang memuatkan item, sekejap ya.</p>}
+
+          {status === "error" && (
+            <div className="notice" role="alert">
+              <p>Senarai item tidak dapat dimuatkan. Semak sambungan internet anda dan cuba lagi.</p>
+              <button type="button" className="btn" onClick={reload}>Cuba lagi</button>
+            </div>
+          )}
+
+          {status === "ready" && plants.length === 0 && <p className="notice">Belum ada item disenaraikan. Sila datang semula nanti.</p>}
+
+          {plants.length > 0 && shown.length === 0 && (
+            <div className="notice">
+              <p>Tiada item dengan nama itu.</p>
+              <button type="button" className="btn btn-quiet" onClick={() => { setQuery(""); setCategory("Semua"); }}>Lihat semua item</button>
+            </div>
+          )}
+
+          <ul className="plant-grid">
+            {shown.map((plant) => <li key={plant.id}><PlantCard plant={plant} /></li>)}
+          </ul>
         </div>
-
-        {usedCategories.length > 1 && (
-          <div className="tabs" role="group" aria-label="Kategori">
-            {["Semua", ...usedCategories].map((name) => (
-              <button key={name} type="button" aria-pressed={category === name} onClick={() => setCategory(name)}>{name}</button>
-            ))}
-          </div>
-        )}
-
-        {status === "loading" && plants.length === 0 && <p className="notice" role="status">Sedang memuatkan item, sekejap ya.</p>}
-
-        {status === "error" && (
-          <div className="notice" role="alert">
-            <p>Senarai item tidak dapat dimuatkan. Semak sambungan internet anda dan cuba lagi.</p>
-            <button type="button" className="btn" onClick={reload}>Cuba lagi</button>
-          </div>
-        )}
-
-        {status === "ready" && plants.length === 0 && <p className="notice">Belum ada item disenaraikan. Sila datang semula nanti.</p>}
-
-        {plants.length > 0 && shown.length === 0 && (
-          <div className="notice">
-            <p>Tiada item dengan nama itu.</p>
-            <button type="button" className="btn btn-quiet" onClick={() => { setQuery(""); setCategory("Semua"); }}>Lihat semua item</button>
-          </div>
-        )}
-
-        <ul className="plant-grid">
-          {shown.map((plant) => <li key={plant.id}><PlantCard plant={plant} /></li>)}
-        </ul>
       </section>
     </>
   );
@@ -99,8 +115,8 @@ function PlantCard({ plant }: { plant: Plant }) {
       <div className="plant-card-foot">
         <span className={available && plant.stock > 3 ? "muted" : "low"}>{stockText(plant)}</span>
         {available && (inBasket > 0
-          ? <button type="button" className="btn btn-quiet btn-small" onClick={() => setBasketOpen(true)}>Dalam bakul · {inBasket}</button>
-          : <button type="button" className="btn btn-small" onClick={() => setQty(plant, 1)} aria-label={`Tambah ${plant.name}`}>Tambah</button>)}
+          ? <button type="button" className="btn btn-quiet btn-small" onClick={() => setBasketOpen(true)}>Dalam bakul ({inBasket})</button>
+          : <button type="button" className="btn btn-quiet btn-small" onClick={() => setQty(plant, 1)} aria-label={`Tambah ${plant.name}`}>Tambah</button>)}
       </div>
     </article>
   );

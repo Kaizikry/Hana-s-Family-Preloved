@@ -14,7 +14,7 @@ export function PlantPage({ id }: { id: string }) {
     return (
       <div className="page notice">
         <p>{status === "loading" ? "Sedang memuatkan item, sekejap ya." : "Item ini tidak dijumpai."}</p>
-        <a className="back" href="#/">← Katalog</a>
+        <a className="back" href="#/">Kembali ke katalog</a>
       </div>
     );
   }
@@ -27,13 +27,14 @@ export function PlantPage({ id }: { id: string }) {
 
   return (
     <div className="page">
-      <a className="back" href="#/">← Katalog</a>
+      <a className="back" href="#/">Kembali ke katalog</a>
       <div className="plant-page">
         <div className="arch"><Photo plant={plant} /></div>
         <div>
-          <p className="muted">{plant.category} · <span className={plant.stock > 3 && inStock(plant) ? "" : "low"}>{stockText(plant)}</span></p>
           <h1>{plant.name}</h1>
           {plant.colour && <p className="muted">{plant.colour}</p>}
+          <p className="muted">{plant.category}</p>
+          <p className={plant.stock > 3 && inStock(plant) ? "muted" : "low"}>{stockText(plant)}</p>
           <p className="plant-price"><strong>{money(plant.price)}</strong> anggaran</p>
           {plant.description && <p>{plant.description}</p>}
           <dl className="care">
@@ -42,7 +43,7 @@ export function PlantPage({ id }: { id: string }) {
           {inStock(plant) && (
             <div className="add-row">
               <Stepper value={qty} max={plant.stock} label={plant.name} onChange={(n) => setLocalQty(Math.max(1, n))} />
-              <button type="button" className="btn" onClick={addToBasket}>Tambah ke bakul · {money(plant.price * qty)}</button>
+              <button type="button" className="btn" onClick={addToBasket}>Tambah ke bakul, {money(plant.price * qty)}</button>
             </div>
           )}
           <p className="muted small">Ini pertanyaan tempahan. {config.ownerName} akan sahkan stok dan harga melalui WhatsApp sebelum anda datang ambil.</p>

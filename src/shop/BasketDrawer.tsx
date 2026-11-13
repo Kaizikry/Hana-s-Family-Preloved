@@ -15,7 +15,7 @@ export function BasketDrawer() {
           <h2>Bakul <span className="count">{count}</span></h2>
           <button type="button" className="icon-btn" onClick={close} aria-label="Tutup bakul">×</button>
         </header>
-        <p className="muted small drawer-note">Ambil sendiri di {config.pickupPlace} · {config.pickupHours}</p>
+        <p className="muted small drawer-note">Ambil sendiri di {config.pickupPlace}, {config.pickupHours.toLowerCase()}</p>
 
         <ul className="drawer-lines">
           {lines.map(({ plant, qty, soldOut }) => (

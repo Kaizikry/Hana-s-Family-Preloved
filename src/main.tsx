@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "@fontsource/caprasimo";
-import "@fontsource-variable/figtree";
+import "@fontsource-variable/bricolage-grotesque/standard.css";
+import "@fontsource-variable/source-serif-4/opsz.css";
 import "./styles.css";
 import { App } from "./App";
 

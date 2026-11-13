@@ -55,7 +55,7 @@ export function Inventory({ token, onError }: { token: string; onError: (err: un
       <div className="admin-head">
         <div>
           <h1>Inventori</h1>
-          <p className="muted">{plants.length} item · {available} ada stok · {plants.length - available} habis dijual</p>
+          <p className="muted">{plants.length} item, {available} ada stok, {plants.length - available} habis dijual</p>
         </div>
         <button type="button" className="btn" onClick={() => setEditing("new")}>Tambah item</button>
       </div>

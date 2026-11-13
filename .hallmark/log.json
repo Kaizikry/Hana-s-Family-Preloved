@@ -1,0 +1,33 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "shape": "Marquee Hero",
+  "theme": "editorial",
+  "axes": "light/display-condensed/chromatic-green",
+  "hero": "Stage",
+  "nav": "slab",
+  "footer": "colophon block",
+  "imagery": "photographs, library 1, natural; catalogue demo drawings (waived 80)",
+  "photos": [
+   "Wooden_coat_hangers.jpg"
+  ],
+  "entry": "none",
+  "fingerprint": "marquee-stage-slab-colophon-grid-band",
+  "sections": [
+   "Hero (Stage, photo left)",
+   "Band (pickup strip, ink)",
+   "Grid (catalogue, 4 across, filters)",
+   "Footer (colophon block on paper-2)"
+  ],
+  "signature": "the cover line Dari almari kami, sedia untuk almari anda. at poster scale beside the hangers photograph",
+  "waived": [
+   "80",
+   "44c",
+   "77"
+  ],
+  "prompt": "family preloved clothing shop catalogue, fresh bright fashion look, buyers pick items and send one WhatsApp inquiry",
+  "date": "2026-11-13"
+ }
+]
